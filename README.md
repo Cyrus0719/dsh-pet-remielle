@@ -1,4 +1,4 @@
-# 蕾米埃尔桌宠 · dsh-pet-remielle
+# 蕾米埃尔桌宠 · dsh-pet-remielle-desktop
 
 把「小蕾米 · 全帧版」的 754 帧素材做成**常驻 Windows 桌面**的桌宠：透明置顶窗、原生分辨率动画、能在桌面上直接和 DSH 智能体对话和派活。
 
@@ -31,6 +31,18 @@ plugin_manager install_bundle target="github:Cyrus0719/dsh-pet-remielle"
 
 ```bash
 dsh plugin --profile <profile> add github:Cyrus0719/dsh-pet-remielle
+```
+
+### 从 npm 安装
+
+```
+plugin_manager install_bundle target="npm:dsh-pet-remielle-desktop"
+```
+
+命令行等价写法：
+
+```bash
+dsh plugin --profile <profile> add dsh-pet-remielle-desktop
 ```
 
 ### 从本地目录安装
