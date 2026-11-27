@@ -19,6 +19,7 @@
     background: rgba(255,255,255,.94); color: #8d7580; font-size: 13px; line-height: 1; padding: 0;
     box-shadow: 0 3px 10px rgba(120,90,105,.22); }
   #controls button:hover { background: #fff; color: #d2688f; }
+  #hit { position: fixed; left: 0; top: 0; width: 0; height: 0; background: rgba(255, 255, 255, 0.004); pointer-events: none; }
   #chat { position: fixed; display: none; flex-direction: column; z-index: 20; overflow: hidden;
     background: rgba(255,255,255,.96); border: 1px solid rgba(0,0,0,.07); border-radius: 18px;
     box-shadow: 0 18px 44px rgba(38,28,34,.20), 0 2px 6px rgba(0,0,0,.06); }
@@ -181,6 +182,7 @@
 </style>
 </head>
 <body>
+  <div id="hit"></div>
 <canvas id="pet"></canvas>
 <img id="petimg" alt="" draggable="false">
 <div id="badge"><img src="/badge.png" alt=""></div>
@@ -237,6 +239,7 @@
   const chatAttach = document.getElementById('chat-attach')
   const attachRow = document.getElementById('attach-row')
   const lightbox = document.getElementById('lightbox')
+  const hit = document.getElementById('hit')
   const chatSub = document.getElementById('chat-sub')
   const statusBox = document.getElementById('status')
   const statusText = document.getElementById('status-text')
@@ -314,6 +317,10 @@
     canvas.style.height = (L.wh / d) + 'px'
     ctx.imageSmoothingEnabled = false
     positionPetImageOnly()
+    hit.style.left = (L.petX / d) + 'px'
+    hit.style.top = (L.petY / d) + 'px'
+    hit.style.width = (L.petW / d) + 'px'
+    hit.style.height = (L.petH / d) + 'px'
     const total = 24 * 3 + 6 * 2
     controls.style.left = clamp((L.petX + L.petW) / d - total - 8, 0, Math.max(0, L.ww / d - total)) + 'px'
     controls.style.top = ((L.petY + 8) / d) + 'px'
