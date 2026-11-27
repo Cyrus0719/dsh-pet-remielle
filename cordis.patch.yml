@@ -1,7 +1,7 @@
 # 蕾米埃尔桌面桌宠 bundle layer.
 - insert:
     - id: pet-remielle
-      name: dsh-pet-remielle
+      name: dsh-pet-remielle-desktop
       config:
         enabled: true
         alwaysOnTop: true

@@ -46,7 +46,7 @@ plugin_manager install_bundle target="file:C:/Users/<你>/dsh-pet-remielle"
 ### 卸载
 
 ```
-plugin_manager remove_bundle target="dsh-pet-remielle"
+plugin_manager remove_bundle target="dsh-pet-remielle-desktop"
 ```
 
 再删掉 %USERPROFILE%\\.dsh\\desktop-pet（对话、位置、缩放记忆都在里面）。
