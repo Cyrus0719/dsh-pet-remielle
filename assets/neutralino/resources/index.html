@@ -126,7 +126,7 @@
     border: 1px solid #ece2e7; background: #fff; box-shadow: 0 2px 8px rgba(90,60,75,.05);
     transition: border-color .18s, box-shadow .18s, transform .18s; }
   #composer:focus-within { border-color: #efbdd2; box-shadow: 0 0 0 4px rgba(226,140,175,.13), 0 2px 8px rgba(90,60,75,.05); }
-  #chat-input { font-size: 13px; padding: 6px 0; }
+  #chat-input { font-size: 13px; padding: 6px 0; min-height: 20px; }
   #chat-input::placeholder { color: #c0b1b9; }
   #chat-send { width: 32px; height: 32px; font-size: 13px;
     background: linear-gradient(160deg, #f2a0c0 0%, #e1729b 100%);
@@ -208,7 +208,7 @@
   <div id="status"><span class="spin"></span><span id="status-text"></span></div>
   <div id="attach-row"></div>
   <div id="composer">
-    <textarea id="chat-input" rows="1" maxlength="4000" placeholder="说点什么，或者让我帮你做点什么…"></textarea>
+    <textarea id="chat-input" rows="1" maxlength="4000" placeholder="说点什么…"></textarea>
     <button id="chat-attach" title="发张图片">＋</button>
     <button id="chat-send" title="发送">↑</button>
   </div>
@@ -688,7 +688,15 @@
     chat.style.display = 'flex'
     if (!chatLog.childElementCount) showEmpty()
     pushLayout(computeLayout(true))
-    window.setTimeout(() => { applyLayout(); scrollLog(); try { chatInput.focus() } catch (e) {} }, 110)
+    window.setTimeout(() => {
+      applyLayout(); scrollLog()
+      try {
+        chatInput.style.height = 'auto'
+        chatInput.style.height = Math.min(88, Math.max(20, chatInput.scrollHeight)) + 'px'
+        chatInput.scrollTop = 0
+      } catch (e) {}
+      try { chatInput.focus() } catch (e) {}
+    }, 110)
     try { Neutralino.window.focus() } catch (e) {}
   }
   function closeChat() {
@@ -864,7 +872,6 @@
   refreshSubtitle()
   showEmpty()
   try { Neutralino.init() } catch (e) {}
-  // 无托盘图标：Neutralino 的托盘在 Win11 溢出区里点不动，改用桌面徽章 + 右键菜单收起/退出
 })()
 </script>
 </body>
