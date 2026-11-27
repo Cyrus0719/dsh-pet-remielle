@@ -742,36 +742,6 @@
     try { Neutralino.events.broadcast('pet.quit', {}) } catch (e) {}
     setTimeout(() => { try { Neutralino.app.exit() } catch (e) {} }, 300)
   }
-  function setupTray() {
-    try {
-      Neutralino.os.setTray({
-        icon: '/resources/tray.png',
-        menu: [
-          { id: 'pet-show', text: '显示蕾米埃尔' },
-          { id: 'pet-hide', text: '收起' },
-          { id: 'pet-new', text: '新开一个会话' },
-          { id: 'pet-size', text: '大小', menu: [
-            { id: 'pet-size-075', text: '小 0.75×' },
-            { id: 'pet-size-100', text: '标准 1×' },
-            { id: 'pet-size-125', text: '大 1.25×' },
-            { id: 'pet-size-150', text: '特大 1.5×' }
-          ] },
-          { id: 'pet-quit', text: '退出蕾米埃尔' }
-        ]
-      }).catch(() => {})
-    } catch (e) {}
-  }
-  Neutralino.events.on('trayMenuItemClicked', (evt) => {
-    const id = evt && evt.detail ? evt.detail.id : ''
-    if (id === 'pet-show') { expandPet(); try { Neutralino.window.show() } catch (e) {} }
-    else if (id === 'pet-hide') collapsePet()
-    else if (id === 'pet-quit') quitApp()
-    else if (id === 'pet-new') { try { Neutralino.events.broadcast('pet.newSession', {}) } catch (e) {} }
-    else if (id && id.indexOf('pet-size-') === 0) {
-      const value = parseInt(id.slice(9), 10) / 100
-      if (Number.isFinite(value)) applyScale(value)
-    }
-  })
   Neutralino.events.on('pet.chat.delta', (evt) => {
     const d = evt.detail || {}
     if (typeof d.text !== 'string' || d.text.length === 0) return
