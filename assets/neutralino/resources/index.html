@@ -437,6 +437,7 @@
     if (cancelled) return
     try { Neutralino.events.broadcast('pet.dragEnd', {}) } catch (e) {}
     if (moved) {
+      if (chatOpen) anchorBefore = { x: petAnchor.x, y: petAnchor.y }
       try { Neutralino.events.broadcast('pet.drag', { x: petAnchor.x, y: petAnchor.y }) } catch (e) {}
       return
     }
