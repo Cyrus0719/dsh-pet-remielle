@@ -19,23 +19,15 @@
 
 ## 安装
 
-要求：Windows 10/11、DSH 0.2.x 及以上、profile 使用 pnpm。
+要求：Windows 10/11、DSH 0.2.x 及以上。运行时（Neutralino）已随包内置，安装时不跑任何构建脚本，不需要 allowBuilds。
 
 ### 从 GitHub 安装
 
-```bash
-# 1) 给 profile 允许 postinstall（它要下载 Neutralino 运行时）
-#    编辑 %USERPROFILE%\.dsh\profiles\<profile>\pnpm-workspace.yaml
-allowBuilds:
-  dsh-pet-remielle: true
 ```
-
-```
-# 2) 在 DSH 插件管理器里安装
 plugin_manager install_bundle target="github:Cyrus0719/dsh-pet-remielle"
 ```
 
-或者命令行：
+命令行等价写法：
 
 ```bash
 dsh plugin --profile <profile> add github:Cyrus0719/dsh-pet-remielle
@@ -43,20 +35,13 @@ dsh plugin --profile <profile> add github:Cyrus0719/dsh-pet-remielle
 
 ### 从本地目录安装
 
-```yaml
-# %USERPROFILE%\.dsh\profiles\<profile>\pnpm-workspace.yaml
-allowBuilds:
-  dsh-pet-remielle: true
-  "dsh-pet-remielle@file:../../../dsh-pet-remielle": true
-```
-
 ```
 plugin_manager install_bundle target="file:C:/Users/<你>/dsh-pet-remielle"
 ```
 
-首次安装若报 `ERR_PNPM_IGNORED_BUILDS`，就是 allowBuilds 没生效；改完重跑即可，postinstall 会把 `runtime/neutralino-win_x64.exe` 下载到位。
+安装完成即启用（cordis.patch.yml 里插入 pet-remielle），桌面上应该出现蕾米埃尔。窗口没出现时检查插件条目是不是 active；改过插件代码后需要重载：把条目关掉再打开一次。
 
-安装完成即启用（`cordis.patch.yml` 里插入 `pet-remielle`），桌面上应该出现蕾米埃尔。窗口没出现时检查插件条目是不是 active；改过插件代码后需要重载：把条目关掉再打开一次。
+如果 runtime/neutralino-win_x64.exe 丢了（比如你只复制了部分文件），执行 node scripts/install-neutralino.mjs 重新下载。
 
 ### 卸载
 
@@ -64,8 +49,7 @@ plugin_manager install_bundle target="file:C:/Users/<你>/dsh-pet-remielle"
 plugin_manager remove_bundle target="dsh-pet-remielle"
 ```
 
-再删掉 `%USERPROFILE%\.dsh\desktop-pet`（对话、位置、缩放记忆都在里面）。
-
+再删掉 %USERPROFILE%\\.dsh\\desktop-pet（对话、位置、缩放记忆都在里面）。
 ## 用
 
 | 操作 | 结果 |
