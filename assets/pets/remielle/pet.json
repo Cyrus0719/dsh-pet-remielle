@@ -1,0 +1,17 @@
+{
+  "id": "remielle",
+  "displayName": "蕾米埃尔",
+  "description": "全帧小蕾米（蕾米埃尔）· HanaAyane / 小蕾米 · 仅限非商业同人使用",
+  "cell": [
+    340,
+    304
+  ],
+  "animations": {
+    "idle": "anims/idle.webp",
+    "thinking": "anims/thinking.webp",
+    "tool": "anims/tool.webp",
+    "review": "anims/review.webp",
+    "waiting": "anims/waiting.webp",
+    "done": "anims/done.webp"
+  }
+}

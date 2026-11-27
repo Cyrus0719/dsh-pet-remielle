@@ -1,0 +1,15 @@
+# 蕾米埃尔桌面桌宠 bundle layer.
+- insert:
+    - id: pet-remielle
+      name: dsh-pet-remielle
+      config:
+        enabled: true
+        alwaysOnTop: true
+        petScale: 1
+        petId: remielle
+        hideWhenIdle: false
+        animationEnabled: true
+        idleFrequencySec: 20
+        clickThrough: false
+        startSleeping: false
+        animationSpeed: 1

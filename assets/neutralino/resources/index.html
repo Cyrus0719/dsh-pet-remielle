@@ -1,0 +1,875 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>蕾米埃尔</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: transparent; overflow: hidden; user-select: none;
+    font-family: "Microsoft YaHei UI", "PingFang SC", "Segoe UI", system-ui, sans-serif; }
+  #pet { position: fixed; left: 0; top: 0; display: block; }
+  #petimg { position: fixed; left: 0; top: 0; pointer-events: none; display: none; }
+  #badge { position: fixed; left: 0; top: 0; width: 64px; height: 64px; display: none; cursor: pointer;
+    border-radius: 50%; border: 2px solid rgba(255,168,198,.95);
+    background: radial-gradient(circle at 34% 28%, #fff, #ffe1ec 62%, #ffd0e2);
+    box-shadow: 0 8px 22px rgba(255,120,170,.42); overflow: hidden; }
+  #badge img { width: 100%; height: 100%; object-fit: cover; }
+  #controls { position: fixed; display: none; gap: 6px; z-index: 15; }
+  #controls button { width: 24px; height: 24px; border: 0; border-radius: 50%; cursor: pointer;
+    background: rgba(255,255,255,.94); color: #8d7580; font-size: 13px; line-height: 1; padding: 0;
+    box-shadow: 0 3px 10px rgba(120,90,105,.22); }
+  #controls button:hover { background: #fff; color: #d2688f; }
+  #chat { position: fixed; display: none; flex-direction: column; z-index: 20; overflow: hidden;
+    background: rgba(255,255,255,.96); border: 1px solid rgba(0,0,0,.07); border-radius: 18px;
+    box-shadow: 0 18px 44px rgba(38,28,34,.20), 0 2px 6px rgba(0,0,0,.06); }
+  #chat-head { display: flex; align-items: center; gap: 9px; padding: 11px 12px 10px 14px;
+    border-bottom: 1px solid rgba(0,0,0,.05); }
+  #chat-head .ava { width: 28px; height: 28px; border-radius: 50%; overflow: hidden; flex: none;
+    border: 1px solid rgba(0,0,0,.06); background: #fff; }
+  #chat-head .ava img { width: 100%; height: 100%; object-fit: cover; }
+  #chat-head .who { display: flex; flex-direction: column; line-height: 1.3; min-width: 0; flex: 1; }
+  #chat-head .nm { font-size: 13px; font-weight: 600; color: #2c2529; letter-spacing: .2px; }
+  #chat-head .sub { font-size: 10px; color: #a49aa1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #chat-head .hbtns { display: flex; align-items: center; gap: 2px; }
+  #chat-head .hbtn { border: 0; background: transparent; color: #b0a5ab; font-size: 13px; cursor: pointer;
+    width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; }
+  #chat-head .hbtn:hover { background: rgba(0,0,0,.05); color: #6f5b66; }
+  #chat-log { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 12px 14px 6px; scrollbar-width: thin; }
+  #chat-log::-webkit-scrollbar { width: 4px; }
+  #chat-log::-webkit-scrollbar-thumb { background: rgba(0,0,0,.12); border-radius: 3px; }
+  .row { display: flex; gap: 7px; margin: 9px 0; align-items: flex-end; animation: rise .16s ease-out; }
+  @keyframes rise { from { opacity: 0; transform: translateY(3px); } to { opacity: 1; transform: none; } }
+  .row.user { justify-content: flex-end; }
+  .row .ava { width: 23px; height: 23px; border-radius: 50%; overflow: hidden; flex: none; margin-bottom: 2px;
+    border: 1px solid rgba(0,0,0,.06); background: #fff; }
+  .row .ava img { width: 100%; height: 100%; object-fit: cover; }
+  .bubble { max-width: 78%; padding: 8px 12px; font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+  .row.pet .bubble { background: #fff; color: #33292e; border: 1px solid #efe8eb;
+    border-radius: 14px 14px 14px 4px; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+  .row.user .bubble { background: #fbe4ed; color: #4b3540; border: 1px solid #f7d8e3; border-radius: 14px 14px 4px 14px; }
+  .row.err .bubble { background: #fff2f3; color: #b4465c; border: 1px solid #f6d9dd; border-radius: 14px 14px 14px 4px; }
+  .sys { text-align: center; margin: 10px 0; font-size: 10px; color: #aaa0a6; }
+  .sys span { background: rgba(0,0,0,.035); border-radius: 8px; padding: 3px 9px; }
+  .typing { display: inline-flex; gap: 4px; align-items: center; height: 16px; }
+  .typing i { width: 4px; height: 4px; border-radius: 50%; background: #d7a8bb; animation: blink 1.1s infinite; }
+  .typing i:nth-child(2) { animation-delay: .18s; }
+  .typing i:nth-child(3) { animation-delay: .36s; }
+  @keyframes blink { 0%, 60%, 100% { opacity: .3; } 30% { opacity: 1; } }
+  #status { display: none; align-items: center; gap: 6px; margin: 2px 16px 4px; font-size: 10px; color: #a09098; }
+  #status .spin { width: 8px; height: 8px; border-radius: 50%; border: 1.5px solid #eddde4; border-top-color: #d87ea4; animation: spin .8s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  #composer { display: flex; align-items: flex-end; gap: 6px; margin: 4px 12px 8px; padding: 5px 5px 5px 11px;
+    background: #fff; border-radius: 15px; border: 1px solid #ece5e8; transition: border-color .16s, box-shadow .16s; }
+  #composer:focus-within { border-color: #e7c3d3; box-shadow: 0 0 0 3px rgba(216,126,164,.12); }
+  #chat-input { flex: 1; border: 0; outline: 0; resize: none; background: transparent; font: inherit;
+    font-size: 13px; line-height: 1.55; color: #33292e; max-height: 88px; padding: 5px 0; overflow-y: auto; }
+  #chat-input::placeholder { color: #bcb0b6; }
+  #chat-input::-webkit-scrollbar { width: 0; height: 0; }
+  #chat-send { width: 29px; height: 29px; flex: none; border: 0; border-radius: 50%; cursor: pointer;
+    background: #e790b2; color: #fff; font-size: 12px; display: grid; place-items: center; transition: background .14s, transform .12s; }
+  #chat-send:hover { background: #dd7ba3; }
+  #chat-send:active { transform: scale(.94); }
+  #chat-send.busy { background: #cfc7cb; }
+  #hint { font-size: 9px; color: #c2b8be; text-align: center; margin: -2px 0 7px; }
+  #empty { display: flex; flex-direction: column; align-items: center; gap: 7px; padding: 20px 10px 8px; }
+  #empty .big { width: 46px; height: 46px; border-radius: 50%; overflow: hidden; border: 1px solid rgba(0,0,0,.07); }
+  #empty .big img { width: 100%; height: 100%; object-fit: cover; }
+  #empty .t1 { font-size: 12.5px; color: #4f4349; font-weight: 600; }
+  #empty .t2 { font-size: 10.5px; color: #a49aa1; text-align: center; line-height: 1.6; }
+  #chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; padding-top: 4px; }
+  #chips button { border: 1px solid #ece4e8; background: #fff; color: #7d6874; font: inherit;
+    font-size: 10px; padding: 5px 10px; border-radius: 11px; cursor: pointer; }
+  #chips button:hover { border-color: #e2cfd8; background: #fdf6f9; }
+  #menu { position: fixed; display: none; z-index: 40; min-width: 168px; padding: 4px;
+    background: #fff; border-radius: 11px; border: 1px solid rgba(0,0,0,.08);
+    box-shadow: 0 10px 28px rgba(40,30,35,.22); }
+  #menu button { display: flex; width: 100%; padding: 7px 10px; border: 0; border-radius: 7px;
+    background: transparent; text-align: left; font: inherit; font-size: 12px; color: #3d3338; cursor: pointer; }
+  #menu button:hover { background: #f6f1f3; }
+  #menu button.danger { color: #b4465c; }
+  #menu .sep { height: 1px; background: rgba(0,0,0,.06); margin: 4px 6px; }
+
+  /* ---- design v3 ---- */
+  #chat {
+    background: linear-gradient(180deg, rgba(255,252,253,.985) 0%, rgba(255,255,255,.985) 42%);
+    border: 1px solid rgba(232,220,226,.9);
+    border-radius: 20px;
+    box-shadow: 0 26px 64px rgba(52,32,42,.26), 0 6px 18px rgba(52,32,42,.10), inset 0 1px 0 rgba(255,255,255,.9);
+  }
+  #chat-head {
+    padding: 12px 12px 11px 14px;
+    background: linear-gradient(180deg, #fff5f9 0%, #fffafc 100%);
+    border-bottom: 1px solid rgba(236,225,230,.75);
+  }
+  #chat-head .ava { width: 30px; height: 30px; border-radius: 11px; border: 1px solid #fff;
+    box-shadow: 0 2px 7px rgba(210,140,170,.30); }
+  #chat-head .nm { font-size: 13.5px; letter-spacing: .3px; color: #32262c; }
+  #chat-head .sub { font-size: 10px; color: #ac98a2; letter-spacing: .1px; }
+  #chat-head .hbtn { width: 26px; height: 26px; border-radius: 8px; font-size: 13px; color: #b6a3ac; }
+  #chat-head .hbtn:hover { background: rgba(226,150,180,.14); color: #b25c80; }
+  #chat-log { padding: 14px 14px 8px; }
+  .row { margin: 11px 0; }
+  .row .ava { width: 24px; height: 24px; border-radius: 9px; border: 1px solid #fff;
+    box-shadow: 0 1px 4px rgba(200,150,170,.28); }
+  .bubble { padding: 9px 13px; font-size: 13px; line-height: 1.62; letter-spacing: .1px; }
+  .row.pet .bubble { background: #fff; color: #3a2f34; border: 1px solid #f2e9ed;
+    border-radius: 16px 16px 16px 5px; box-shadow: 0 2px 5px rgba(90,60,75,.055); }
+  .row.user .bubble { background: linear-gradient(135deg, #ffdceb 0%, #ffc8dd 100%); color: #4c2b39;
+    border: 1px solid #ffcbdf; border-radius: 16px 16px 5px 16px; box-shadow: 0 2px 6px rgba(226,140,175,.18); }
+  .row.err .bubble { background: #fff4f5; color: #ad4358; border: 1px solid #f7dbdf; }
+  #status { margin: 0 18px 5px; font-size: 10.5px; color: #a8949e; letter-spacing: .2px;
+    background: rgba(255,246,250,.9); border: 1px solid rgba(240,228,234,.9);
+    border-radius: 999px; padding: 4px 10px; align-self: flex-start; }
+  #status .spin { width: 9px; height: 9px; border-width: 1.6px; border-top-color: #dd7ba3; }
+  #composer { margin: 2px 12px 8px; padding: 6px 6px 6px 13px; border-radius: 19px;
+    border: 1px solid #ece2e7; background: #fff; box-shadow: 0 2px 8px rgba(90,60,75,.05);
+    transition: border-color .18s, box-shadow .18s, transform .18s; }
+  #composer:focus-within { border-color: #efbdd2; box-shadow: 0 0 0 4px rgba(226,140,175,.13), 0 2px 8px rgba(90,60,75,.05); }
+  #chat-input { font-size: 13px; padding: 6px 0; }
+  #chat-input::placeholder { color: #c0b1b9; }
+  #chat-send { width: 32px; height: 32px; font-size: 13px;
+    background: linear-gradient(160deg, #f2a0c0 0%, #e1729b 100%);
+    box-shadow: 0 3px 9px rgba(225,114,155,.38); }
+  #chat-send:hover { background: linear-gradient(160deg, #ed92b6 0%, #d9628f 100%); }
+  #chat-send.busy { background: #d9ced3; box-shadow: none; }
+  #hint { font-size: 9.5px; color: #c8bcc2; margin: -1px 0 8px; letter-spacing: .2px; }
+  #empty { padding: 26px 12px 10px; gap: 9px; }
+  #empty .big { width: 54px; height: 54px; border-radius: 19px; border: 1px solid #fff;
+    box-shadow: 0 6px 16px rgba(214,140,175,.28); }
+  #empty .t1 { font-size: 13px; color: #46383f; letter-spacing: .3px; }
+  #empty .t2 { font-size: 11px; color: #ab98a2; line-height: 1.7; }
+  #chips { padding-top: 6px; gap: 7px; }
+  #chips button { border: 1px solid #ece1e7; background: #fff; color: #7f6a76; font-size: 11px;
+    padding: 6px 12px; border-radius: 999px; box-shadow: 0 1px 3px rgba(90,60,75,.04); }
+  #chips button:hover { border-color: #eccddb; background: #fff7fa; color: #b25c80; }
+  #menu { border-radius: 13px; border: 1px solid rgba(232,220,226,.95); padding: 5px;
+    box-shadow: 0 16px 40px rgba(52,32,42,.24); }
+  #menu button { font-size: 12.5px; padding: 8px 11px; border-radius: 8px; }
+  #menu button:hover { background: #fff3f8; color: #b25c80; }
+  #menu button.danger:hover { background: #fff4f5; color: #b4465c; }
+
+  #composer { position: relative; z-index: 2; }
+  #composer::before { content: ""; position: absolute; left: 0; right: 0; top: -26px; height: 26px; pointer-events: none;
+    background: linear-gradient(to top, rgba(255,255,255,.99) 0%, rgba(255,255,255,.0) 100%); }
+  #chat-log { scroll-behavior: smooth; padding-bottom: 10px; }
+
+  /* ---- emoji & images ---- */
+  html, body, #chat, #chat-input, .bubble, #hint, #menu, #chips button {
+    font-family: "Microsoft YaHei UI", "PingFang SC", "Segoe UI", "Segoe UI Emoji", "Noto Color Emoji", system-ui, sans-serif; }
+  #attach-row { display: none; gap: 6px; padding: 0 14px 4px; flex-wrap: wrap; align-items: center; }
+  #attach-row.on { display: flex; }
+  .thumb { position: relative; width: 44px; height: 44px; border-radius: 10px; overflow: hidden;
+    border: 1px solid #f0dfe6; background: #fff; box-shadow: 0 2px 6px rgba(180,120,145,.18); }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .thumb button { position: absolute; right: 1px; top: 1px; width: 15px; height: 15px; border: 0; border-radius: 50%;
+    background: rgba(45,28,36,.62); color: #fff; font-size: 10px; line-height: 1; cursor: pointer; padding: 0; }
+  #chat-attach { width: 30px; height: 30px; flex: none; border: 0; border-radius: 50%; cursor: pointer;
+    background: transparent; color: #c79cae; font-size: 16px; line-height: 1; display: grid; place-items: center; padding: 0 0 2px; }
+  #chat-attach:hover { background: rgba(226,140,175,.14); color: #b25c80; }
+  .bubble .shots { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .bubble .shots img {
+    object-fit: contain;
+    background: rgba(255, 255, 255, .9); width: 96px; height: 96px; object-fit: cover; border-radius: 10px; cursor: zoom-in;
+    border: 1px solid rgba(0,0,0,.06); background: #fff; }
+  .bubble img.inline { max-width: 100%; max-height: 200px; border-radius: 10px; display: block; margin: 6px 0 2px;
+    border: 1px solid rgba(0,0,0,.06); cursor: zoom-in; }
+  .bubble .shot-missing { font-size: 11px; color: #b08f9c; background: #fbf4f7; border-radius: 8px; padding: 6px 9px; margin: 4px 0; }
+  #lightbox { position: fixed; left: 0; top: 0; width: 100%; height: 100%; display: none; z-index: 60;
+    align-items: center; justify-content: center; background: rgba(26,16,22,.74); }
+  #lightbox.on { display: flex; }
+  #lightbox img { max-width: 92%; max-height: 92%; border-radius: 12px; box-shadow: 0 18px 48px rgba(0,0,0,.45); }
+</style>
+</head>
+<body>
+<canvas id="pet"></canvas>
+<img id="petimg" alt="" draggable="false">
+<div id="badge"><img src="/badge.png" alt=""></div>
+<div id="controls">
+  <button id="ctl-smaller" title="缩小">−</button>
+  <button id="ctl-bigger" title="放大">+</button>
+  <button id="ctl-hide" title="收起">×</button>
+</div>
+<div id="chat">
+  <div id="chat-head">
+    <div class="ava"><img src="/badge.png" alt=""></div>
+    <div class="who">
+      <div class="nm">蕾米埃尔</div>
+      <div class="sub" id="chat-sub">正在连接 DSH…</div>
+    </div>
+    <div class="hbtns">
+      <button class="hbtn" id="chat-reset" title="新开一个会话">⟲</button>
+      <button class="hbtn" id="chat-open" title="在 DSH 里打开">↗</button>
+      <button class="hbtn" id="chat-close" title="收起">×</button>
+    </div>
+  </div>
+  <div id="chat-log"></div>
+  <div id="status"><span class="spin"></span><span id="status-text"></span></div>
+  <div id="attach-row"></div>
+  <div id="composer">
+    <textarea id="chat-input" rows="1" maxlength="4000" placeholder="说点什么，或者让我帮你做点什么…"></textarea>
+    <button id="chat-attach" title="发张图片">＋</button>
+    <button id="chat-send" title="发送">↑</button>
+  </div>
+  <div id="hint">Enter 发送 · Shift + Enter 换行</div>
+</div>
+<div id="lightbox"><img alt=""></div>
+<div id="menu">
+  <button id="menu-chat">和她聊天</button>
+  <button id="menu-session">新开一个会话</button>
+  <button id="menu-webui">在 DSH 里打开</button>
+  <div class="sep"></div>
+  <button id="menu-hide">收起</button>
+  <button id="menu-quit" class="danger">退出蕾米埃尔</button>
+</div>
+<script src="neutralino.js"></script>
+<script src="pet-render.js"></script>
+<script>
+(() => {
+  const canvas = document.getElementById('pet')
+  const ctx = canvas.getContext('2d')
+  const petImg = document.getElementById('petimg')
+  const badge = document.getElementById('badge')
+  const controls = document.getElementById('controls')
+  const chat = document.getElementById('chat')
+  const chatLog = document.getElementById('chat-log')
+  const chatInput = document.getElementById('chat-input')
+  const chatSend = document.getElementById('chat-send')
+  const chatAttach = document.getElementById('chat-attach')
+  const attachRow = document.getElementById('attach-row')
+  const lightbox = document.getElementById('lightbox')
+  const chatSub = document.getElementById('chat-sub')
+  const statusBox = document.getElementById('status')
+  const statusText = document.getElementById('status-text')
+  const menu = document.getElementById('menu')
+  const GAP = 24, CHAT_W = 420, CHAT_H = 620, EDGE = 8, BADGE_SIZE = 64
+  let scale = 1
+  let chatOpen = false
+  let collapsed = false
+  let chatSide = 'right'
+  let petAnchor = { x: 0, y: 0 }
+  let anchorBefore = null
+  let L = { wx: 0, wy: 0, ww: 340, wh: 405, petX: 0, petY: 0, petW: 340, petH: 304, chatX: 0, chatY: 0, chatW: CHAT_W, chatH: CHAT_H, side: 'right' }
+  let animMode = false
+  let animBase = ''
+  let animTracks = null
+  let currentAnimUrl = ''
+  let currentDirective = { pose: 'idle', frameIndex: 0, sx: 0, sy: 0 }
+  const atlas = new Image()
+  let atlasReady = false
+  let spriteUrl = null
+  let hideTimer = null
+  let sessionId = null
+  let sessionLabel = ''
+  let pendingRow = null
+  let pendingBubble = null
+  let busy = false
+  let attachPaths = []
+  let imageSeq = 0
+  const pendingImages = new Map()
+  const $ = (id) => document.getElementById(id)
+  function dpr() { return window.devicePixelRatio || 1 }
+  function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)) }
+  function petSize() {
+    return { petW: Math.max(1, Math.round(CELL_WIDTH * scale)), petH: Math.max(1, Math.round(CELL_HEIGHT * scale)) }
+  }
+  function computeLayout(open) {
+    const d = dpr()
+    const sw = Math.round(screen.width * d), sh = Math.round(screen.height * d)
+    const size = petSize()
+    const closedH = Math.max(size.petH, Math.round(size.petH / (1 - BOTTOM_PAD_FRAC)))
+    const ax = Math.round(clamp(petAnchor.x, 0, Math.max(0, sw - size.petW)))
+    const ay = Math.round(clamp(petAnchor.y, 0, Math.max(0, sh - size.petH)))
+    if (!open) {
+      return { wx: ax, wy: clamp(ay, 0, Math.max(0, sh - closedH)), ww: size.petW, wh: closedH,
+        petX: 0, petY: 0, petW: size.petW, petH: size.petH, chatX: 0, chatY: 0, chatW: 0, chatH: 0, side: null }
+    }
+    const chatH = Math.min(CHAT_H, sh - EDGE * 2), chatW = Math.min(CHAT_W, sw - EDGE * 2)
+    const need = chatW + GAP
+    const rightSpace = sw - (ax + size.petW), leftSpace = ax
+    let side
+    if (rightSpace >= need) side = 'right'
+    else if (leftSpace >= need) side = 'left'
+    else side = rightSpace >= leftSpace ? 'right' : 'left'
+    chatSide = side
+    const chatScreenY = clamp(ay + size.petH - chatH, EDGE, Math.max(EDGE, sh - chatH - EDGE))
+    const wy = Math.min(ay, chatScreenY)
+    const contentBottom = Math.max(ay + size.petH, chatScreenY + chatH)
+    let wh = Math.round((contentBottom - wy) / (1 - BOTTOM_PAD_FRAC))
+    wh = Math.min(wh, sh - wy)
+    const wx = side === 'right' ? ax : ax - need
+    return { wx, wy, ww: need + size.petW, wh, petX: ax - wx, petY: ay - wy,
+      chatX: side === 'right' ? size.petW + GAP : 0, chatY: chatScreenY - wy, chatW, chatH, side }
+  }
+  function applyLayout() {
+    if (collapsed) return
+    const d = dpr()
+    canvas.width = L.ww
+    canvas.height = L.wh
+    canvas.style.width = (L.ww / d) + 'px'
+    canvas.style.height = (L.wh / d) + 'px'
+    ctx.imageSmoothingEnabled = false
+    positionPetImageOnly()
+    const total = 24 * 3 + 6 * 2
+    controls.style.left = clamp((L.petX + L.petW) / d - total - 8, 0, Math.max(0, L.ww / d - total)) + 'px'
+    controls.style.top = ((L.petY + 8) / d) + 'px'
+    if (chatOpen) {
+      chat.style.left = (L.chatX / d) + 'px'
+      chat.style.top = (L.chatY / d) + 'px'
+      chat.style.width = (L.chatW / d) + 'px'
+      chat.style.height = (L.chatH / d) + 'px'
+    }
+  }
+  function positionPetImageOnly() {
+    const d = dpr()
+    petImg.style.width = (L.petW / d) + 'px'
+    petImg.style.height = (L.petH / d) + 'px'
+    petImg.style.left = (L.petX / d) + 'px'
+    petImg.style.top = (L.petY / d) + 'px'
+  }
+  function pushLayout(g) {
+    L = g
+    petAnchor = { x: g.wx + g.petX, y: g.wy + g.petY }
+    try { Neutralino.window.setSize({ width: g.ww, height: g.wh }).catch(() => {}) } catch (e) {}
+    try { Neutralino.window.move(g.wx, g.wy).catch(() => {}) } catch (e) {}
+    window.setTimeout(applyLayout, 50)
+  }
+  function applyScale(next, opts) {
+    scale = clamp(Math.round(next * 4) / 4, 0.5, 2)
+    pushLayout(computeLayout(chatOpen))
+    if (!opts || opts.persist !== false) {
+      try { Neutralino.events.broadcast('pet.saveScale', { scale: scale }) } catch (e) {}
+    }
+  }
+  function setAnim(name) {
+    if (!animTracks) return
+    const rel = animTracks[name] || animTracks.idle
+    if (!rel) return
+    const url = animBase + rel
+    if (url === currentAnimUrl) return
+    currentAnimUrl = url
+    petImg.src = url
+  }
+  function drawCurrent() {
+    if (animMode) { positionPetImageOnly(); return }
+    if (!atlasReady) return
+    const r = sourceRect(currentDirective)
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.drawImage(atlas, r.sx, r.sy, r.sw, r.sh, L.petX, L.petY, L.petW, L.petH)
+  }
+  petImg.addEventListener('load', () => {
+    if (!animMode) return
+    drawCurrent()
+    Neutralino.events.broadcast('pet.uiReady', { animUrl: currentAnimUrl, w: petImg.naturalWidth, h: petImg.naturalHeight })
+  })
+  petImg.addEventListener('error', () => {
+    if (!animMode) return
+    Neutralino.events.broadcast('pet.uiError', { message: 'animation failed: ' + currentAnimUrl })
+  })
+  atlas.addEventListener('load', () => {
+    atlasReady = true
+    drawCurrent()
+    Neutralino.events.broadcast('pet.uiReady', { atlasWidth: atlas.naturalWidth, atlasHeight: atlas.naturalHeight })
+  })
+  atlas.addEventListener('error', () => {
+    Neutralino.events.broadcast('pet.uiError', { message: 'spritesheet failed: ' + spriteUrl })
+  })
+  function hideMenu() { menu.style.display = 'none' }
+  function showControls() { if (hideTimer) { clearTimeout(hideTimer); hideTimer = null } controls.style.display = 'flex' }
+  function scheduleHideControls() {
+    if (hideTimer) clearTimeout(hideTimer)
+    hideTimer = setTimeout(() => { controls.style.display = 'none' }, 600)
+  }
+  let dragging = false
+  let dragStart = null
+  canvas.addEventListener('pointerenter', showControls)
+  canvas.addEventListener('pointerleave', () => { if (dragging) endDrag(true); scheduleHideControls() })
+  controls.addEventListener('pointerenter', showControls)
+  controls.addEventListener('pointerleave', scheduleHideControls)
+  canvas.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return
+    hideMenu()
+    dragging = true
+    dragStart = { px: e.screenX, py: e.screenY, ax: petAnchor.x, ay: petAnchor.y, moved: false }
+    try { canvas.setPointerCapture(e.pointerId) } catch (err) {}
+  })
+  canvas.addEventListener('pointermove', (e) => {
+    if (!dragging || !dragStart) return
+    const d = dpr()
+    const dx = (e.screenX - dragStart.px) * d
+    const dy = (e.screenY - dragStart.py) * d
+    if (!dragStart.moved && Math.abs(dx) < 3 && Math.abs(dy) < 3) return
+    dragStart.moved = true
+    const sw = Math.round(screen.width * d), sh = Math.round(screen.height * d)
+    petAnchor = { x: clamp(Math.round(dragStart.ax + dx), 0, sw - L.petW), y: clamp(Math.round(dragStart.ay + dy), 0, sh - L.petH) }
+    const g = computeLayout(chatOpen)
+    L = { ...L, wx: g.wx, wy: g.wy, petX: g.petX, petY: g.petY, chatY: g.chatY }
+    try { Neutralino.window.move(g.wx, g.wy).catch(() => {}) } catch (err) {}
+    try { Neutralino.events.broadcast('pet.dragMove', { direction: 'right' }) } catch (err) {}
+  })
+  function endDrag(cancelled) {
+    if (!dragging) return
+    dragging = false
+    const moved = dragStart ? dragStart.moved : false
+    dragStart = null
+    if (cancelled) return
+    try { Neutralino.events.broadcast('pet.dragEnd', {}) } catch (e) {}
+    if (moved) {
+      try { Neutralino.events.broadcast('pet.drag', { x: petAnchor.x, y: petAnchor.y }) } catch (e) {}
+      return
+    }
+    petAnchor = { x: Math.round(petAnchor.x), y: Math.round(petAnchor.y) }
+    if (chatOpen) closeChat()
+    else openChat()
+  }
+  canvas.addEventListener('pointerup', (e) => { if (e.button === 0) endDrag(false) })
+  canvas.addEventListener('contextmenu', (e) => {
+    e.preventDefault()
+    menu.style.left = Math.min(e.clientX, Math.max(0, L.ww / dpr() - 180)) + 'px'
+    menu.style.top = Math.min(e.clientY, Math.max(0, L.wh / dpr() - 190)) + 'px'
+    menu.style.display = 'block'
+  })
+  document.addEventListener('pointerdown', (e) => { if (!menu.contains(e.target)) hideMenu() })
+  function scrollLog() { chatLog.scrollTop = chatLog.scrollHeight }
+  function normalizePath(path) {
+    if (typeof path !== 'string') return ''
+    let value = path.replace(/^file:\/\//i, '')
+    if (/^\/[A-Za-z]:[\/]/.test(value)) value = value.slice(1)
+    return value
+  }
+  function requestImageData(path, done) {
+    const id = 'img' + (++imageSeq)
+    pendingImages.set(id, done)
+    try { Neutralino.events.broadcast('pet.readImage', { id: id, path: path }) }
+    catch (e) { pendingImages.delete(id); try { done(null) } catch (err) {} }
+  }
+  function openLightbox(src) {
+    if (typeof src !== 'string' || src.length === 0) return
+    lightbox.querySelector('img').src = src
+    lightbox.classList.add('on')
+  }
+  lightbox.addEventListener('click', () => {
+    lightbox.classList.remove('on')
+    lightbox.querySelector('img').src = ''
+  })
+  function imageEl(kind) {
+    const im = document.createElement('img')
+    im.className = kind
+    im.draggable = false
+    im.addEventListener('click', () => openLightbox(im.src))
+    return im
+  }
+  function fillImage(im, src) {
+    if (typeof src !== 'string' || src.length === 0) return
+    if (/^(https?:|data:)/i.test(src)) { im.src = src; return }
+    im.style.opacity = '.5'
+    const path = normalizePath(src)
+    requestImageData(path, (dataUrl) => {
+      if (typeof dataUrl === 'string' && dataUrl.length > 0) { im.src = dataUrl; im.style.opacity = '1'; return }
+      const ph = document.createElement('div')
+      ph.className = 'shot-missing'
+      ph.textContent = '这张图打不开了'
+      im.replaceWith(ph)
+    })
+  }
+  function appendShots(bubble, paths) {
+    if (!Array.isArray(paths) || paths.length === 0) return
+    const box = document.createElement('div')
+    box.className = 'shots'
+    for (const path of paths) {
+      if (typeof path !== 'string' || path.length === 0) continue
+      const im = imageEl('shot')
+      fillImage(im, path)
+      box.appendChild(im)
+    }
+    if (box.childElementCount > 0) bubble.appendChild(box)
+  }
+  // Split answer text into plain runs and image references, rendering the latter inline.
+  function appendRichText(bubble, text) {
+    const re = /!\[([^\]]*)\]\(([^)\s]+)\)|((?:https?:\/\/|[A-Za-z]:[\\/])[^\s"'<>]*?\.(?:png|jpe?g|webp|gif|bmp))/gi
+    let last = 0
+    let match
+    while ((match = re.exec(text)) !== null) {
+      const src = match[2] || match[3]
+      if (!src) continue
+      if (match.index > last) bubble.appendChild(document.createTextNode(text.slice(last, match.index)))
+      const im = imageEl('inline')
+      fillImage(im, src)
+      bubble.appendChild(im)
+      last = re.lastIndex
+    }
+    if (last < text.length) bubble.appendChild(document.createTextNode(text.slice(last)))
+  }
+  function renderAnswer(bubble, text) {
+    bubble.innerHTML = ''
+    bubble.dataset.started = '1'
+    appendRichText(bubble, typeof text === 'string' ? text : '')
+  }
+  function refreshAttachRow() {
+    attachRow.innerHTML = ''
+    if (attachPaths.length === 0) { attachRow.classList.remove('on'); return }
+    attachRow.classList.add('on')
+    attachPaths.forEach((path, index) => {
+      const cell = document.createElement('div')
+      cell.className = 'thumb'
+      const im = document.createElement('img')
+      fillImage(im, path)
+      cell.appendChild(im)
+      const btn = document.createElement('button')
+      btn.textContent = '×'
+      btn.title = '不要这张了'
+      btn.addEventListener('click', () => { attachPaths.splice(index, 1); refreshAttachRow() })
+      cell.appendChild(btn)
+      attachRow.appendChild(cell)
+    })
+  }
+  chatAttach.addEventListener('click', async () => {
+    if (busy) return
+    hideMenu()
+    try {
+      const picked = await Neutralino.os.showOpenDialog('选择要发给蕾米埃尔的图片', {
+        filters: [{ name: '图片', extensions: ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp'] }],
+        multiSelections: true
+      })
+      const list = Array.isArray(picked) ? picked : (typeof picked === 'string' && picked.length > 0 ? [picked] : [])
+      for (const item of list) {
+        if (attachPaths.length >= 4) break
+        const path = normalizePath(item)
+        if (path.length > 0 && attachPaths.indexOf(path) < 0) attachPaths.push(path)
+      }
+      refreshAttachRow()
+    } catch (e) {}
+  })
+  function addRow(kind, text, opts) {
+    const row = document.createElement('div')
+    row.className = 'row ' + kind
+    if (kind === 'pet' || kind === 'err') {
+      const ava = document.createElement('div')
+      ava.className = 'ava'
+      const im = document.createElement('img')
+      im.src = '/badge.png'
+      ava.appendChild(im)
+      row.appendChild(ava)
+    }
+    const bubble = document.createElement('div')
+    bubble.className = 'bubble'
+    if (opts && opts.html) bubble.innerHTML = opts.html
+    else if (opts && opts.rich) renderAnswer(bubble, text)
+    else bubble.textContent = text
+    if (opts && opts.images) appendShots(bubble, opts.images)
+    row.appendChild(bubble)
+    chatLog.appendChild(row)
+    scrollLog()
+    return { row: row, bubble: bubble }
+  }
+  function addSys(text) {
+    const el = document.createElement('div')
+    el.className = 'sys'
+    const sp = document.createElement('span')
+    sp.textContent = text
+    el.appendChild(sp)
+    chatLog.appendChild(el)
+    scrollLog()
+  }
+  function showEmpty() {
+    if (chatLog.dataset.empty === '1') return
+    chatLog.dataset.empty = '1'
+    const wrap = document.createElement('div')
+    wrap.id = 'empty'
+    wrap.innerHTML = '<div class="big"><img src="/badge.png" alt=""></div>' +
+      '<div class="t1">我在呢</div>' +
+      '<div class="t2">想聊两句，或者直接让我做点什么</div>' +
+      '<div id="chips"></div>'
+    chatLog.appendChild(wrap)
+    const chips = wrap.querySelector('#chips')
+    const list = ['夸夸我', '今天好累', '帮我看看桌面上的东西']
+    for (let i = 0; i < list.length; i++) {
+      const b = document.createElement('button')
+      b.textContent = list[i]
+      b.addEventListener('click', () => { chatInput.value = list[i]; sendChat() })
+      chips.appendChild(b)
+    }
+  }
+  function clearEmpty() {
+    const el = document.getElementById('empty')
+    if (el) el.remove()
+    chatLog.dataset.empty = '0'
+  }
+  function setStatus(text) {
+    if (typeof text === 'string' && text.length > 0) {
+      statusText.textContent = text
+      statusBox.style.display = 'flex'
+    } else statusBox.style.display = 'none'
+  }
+  function setIdleUi() {
+    busy = false
+    chatSend.classList.remove('busy')
+    chatSend.textContent = '↑'
+    chatInput.disabled = false
+  }
+  function clearPending() {
+    if (pendingRow) { pendingRow.remove(); pendingRow = null; pendingBubble = null }
+    setIdleUi()
+  }
+  function showTyping() {
+    const built = addRow('pet', '', { html: '<span class="typing"><i></i><i></i><i></i></span>' })
+    pendingRow = built.row
+    pendingBubble = built.bubble
+    busy = true
+    chatSend.classList.add('busy')
+    chatSend.textContent = '■'
+  }
+  function sendChat() {
+    const typed = chatInput.value.trim()
+    const images = attachPaths.slice(0, 4)
+    const text = typed.length > 0 ? typed : (images.length > 0 ? '看看这张图' : '')
+    if (!text || busy) return
+    hideMenu()
+    clearEmpty()
+    addRow('user', text, { images: images })
+    chatInput.value = ''
+    chatInput.style.height = 'auto'
+    attachPaths = []
+    refreshAttachRow()
+    setStatus(null)
+    showTyping()
+    try { Neutralino.events.broadcast('pet.chat', { text: text, imagePaths: images }) } catch (e) {}
+  }
+  function subtitle() {
+    if (sessionLabel) return '桌面助手 · ' + sessionLabel
+    if (sessionId) return '桌面助手 · 已连接'
+    return '正在连接 DSH…'
+  }
+  function refreshSubtitle() { chatSub.textContent = subtitle() }
+  function renderHistory(payload) {
+    const d = payload || {}
+    clearEmpty()
+    clearPending()
+    chatLog.innerHTML = ''
+    if (Array.isArray(d.turns) && d.turns.length > 0) {
+      for (const turn of d.turns) {
+        if (!turn || typeof turn.text !== 'string' || turn.text.length === 0) continue
+        addRow(turn.role === 'user' ? 'user' : 'pet', turn.text, { images: turn.images, rich: turn.role !== 'user' })
+      }
+    } else showEmpty()
+    if (typeof d.sessionId === 'string') sessionId = d.sessionId
+    refreshSubtitle()
+    scrollLog()
+  }
+  function openChat() {
+    if (chatOpen || collapsed) return
+    anchorBefore = { x: Math.round(petAnchor.x), y: Math.round(petAnchor.y) }
+    chatOpen = true
+    chat.style.display = 'flex'
+    if (!chatLog.childElementCount) showEmpty()
+    pushLayout(computeLayout(true))
+    window.setTimeout(() => { applyLayout(); scrollLog(); try { chatInput.focus() } catch (e) {} }, 110)
+    try { Neutralino.window.focus() } catch (e) {}
+  }
+  function closeChat() {
+    if (!chatOpen) return
+    chatOpen = false
+    chat.style.display = 'none'
+    if (anchorBefore) petAnchor = { x: anchorBefore.x, y: anchorBefore.y }
+    anchorBefore = null
+    pushLayout(computeLayout(false))
+  }
+  chatSend.addEventListener('click', () => {
+    if (busy) { try { Neutralino.events.broadcast('pet.chat', { type: 'cancel' }) } catch (e) {} return }
+    sendChat()
+  })
+  $('chat-close').addEventListener('click', closeChat)
+  $('chat-reset').addEventListener('click', () => {
+    try { Neutralino.events.broadcast('pet.newSession', {}) } catch (e) {}
+    addSys('新开了一个会话')
+  })
+  $('chat-open').addEventListener('click', () => {
+    try { Neutralino.events.broadcast('pet.openSession', { sessionId: sessionId }) } catch (e) {}
+  })
+  chatInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendChat() }
+  })
+  chatInput.addEventListener('input', () => {
+    chatInput.style.height = 'auto'
+    chatInput.style.height = Math.min(88, chatInput.scrollHeight) + 'px'
+  })
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') { hideMenu(); if (chatOpen) closeChat() }
+  })
+  $('menu-chat').addEventListener('click', () => { hideMenu(); openChat() })
+  $('menu-session').addEventListener('click', () => {
+    hideMenu()
+    try { Neutralino.events.broadcast('pet.newSession', {}) } catch (e) {}
+    openChat()
+  })
+  $('menu-webui').addEventListener('click', () => { hideMenu(); try { Neutralino.events.broadcast('pet.openWebui', {}) } catch (e) {} })
+  $('menu-hide').addEventListener('click', () => { hideMenu(); collapsePet() })
+  $('menu-quit').addEventListener('click', () => { hideMenu(); quitApp() })
+  $('ctl-smaller').addEventListener('click', (e) => { e.stopPropagation(); applyScale(scale - 0.25) })
+  $('ctl-bigger').addEventListener('click', (e) => { e.stopPropagation(); applyScale(scale + 0.25) })
+  $('ctl-hide').addEventListener('click', (e) => { e.stopPropagation(); collapsePet() })
+  function collapsePet() {
+    if (collapsed) return
+    if (chatOpen) { chatOpen = false; chat.style.display = 'none'; if (anchorBefore) { petAnchor = { x: anchorBefore.x, y: anchorBefore.y }; anchorBefore = null } }
+    collapsed = true
+    hideMenu()
+    controls.style.display = 'none'
+    canvas.style.display = 'none'
+    petImg.style.display = 'none'
+    badge.style.display = 'block'
+    const d = dpr()
+    const sw = Math.round(screen.width * d), sh = Math.round(screen.height * d)
+    const x = clamp(Math.round(petAnchor.x), 0, sw - BADGE_SIZE)
+    const y = clamp(Math.round(petAnchor.y), 0, sh - BADGE_SIZE)
+    try { Neutralino.window.setSize({ width: BADGE_SIZE, height: BADGE_SIZE }).catch(() => {}) } catch (e) {}
+    try { Neutralino.window.move(x, y).catch(() => {}) } catch (e) {}
+    petAnchor = { x: x, y: y }
+  }
+  function expandPet() {
+    if (!collapsed) return
+    collapsed = false
+    badge.style.display = 'none'
+    canvas.style.display = 'block'
+    if (animMode) petImg.style.display = 'block'
+    pushLayout(computeLayout(chatOpen))
+  }
+  badge.addEventListener('click', expandPet)
+  badge.addEventListener('contextmenu', (e) => {
+    e.preventDefault()
+    expandPet()
+    window.setTimeout(() => { menu.style.left = '8px'; menu.style.top = '8px'; menu.style.display = 'block' }, 160)
+  })
+  function quitApp() {
+    try { Neutralino.events.broadcast('pet.quit', {}) } catch (e) {}
+    setTimeout(() => { try { Neutralino.app.exit() } catch (e) {} }, 300)
+  }
+  function setupTray() {
+    try {
+      Neutralino.os.setTray({
+        icon: '/resources/tray.png',
+        menu: [
+          { id: 'pet-show', text: '显示蕾米埃尔' },
+          { id: 'pet-hide', text: '收起' },
+          { id: 'pet-new', text: '新开一个会话' },
+          { id: 'pet-size', text: '大小', menu: [
+            { id: 'pet-size-075', text: '小 0.75×' },
+            { id: 'pet-size-100', text: '标准 1×' },
+            { id: 'pet-size-125', text: '大 1.25×' },
+            { id: 'pet-size-150', text: '特大 1.5×' }
+          ] },
+          { id: 'pet-quit', text: '退出蕾米埃尔' }
+        ]
+      }).catch(() => {})
+    } catch (e) {}
+  }
+  Neutralino.events.on('trayMenuItemClicked', (evt) => {
+    const id = evt && evt.detail ? evt.detail.id : ''
+    if (id === 'pet-show') { expandPet(); try { Neutralino.window.show() } catch (e) {} }
+    else if (id === 'pet-hide') collapsePet()
+    else if (id === 'pet-quit') quitApp()
+    else if (id === 'pet-new') { try { Neutralino.events.broadcast('pet.newSession', {}) } catch (e) {} }
+    else if (id && id.indexOf('pet-size-') === 0) {
+      const value = parseInt(id.slice(9), 10) / 100
+      if (Number.isFinite(value)) applyScale(value)
+    }
+  })
+  Neutralino.events.on('pet.chat.delta', (evt) => {
+    const d = evt.detail || {}
+    if (typeof d.text !== 'string' || d.text.length === 0) return
+    if (!pendingBubble) {
+      const built = addRow('pet', '')
+      pendingRow = built.row
+      pendingBubble = built.bubble
+    }
+    if (pendingBubble.dataset.started !== '1') { pendingBubble.textContent = ''; pendingBubble.dataset.started = '1' }
+    pendingBubble.textContent += d.text
+    scrollLog()
+  })
+  Neutralino.events.on('pet.chat.done', (evt) => {
+    const d = evt.detail || {}
+    const text = typeof d.text === 'string' ? d.text : ''
+    let rendered = false
+    if (pendingBubble && text.length > 0) {
+      renderAnswer(pendingBubble, text)
+      rendered = true
+      pendingRow = null
+      pendingBubble = null
+    }
+    if (!rendered && text.length > 0) addRow('pet', text, { rich: true })
+    if (text.length === 0 && !chatLog.querySelector('.row')) showEmpty()
+    setIdleUi()
+    setStatus(null)
+    scrollLog()
+  })
+  Neutralino.events.on('pet.imageData', (evt) => {
+    const d = evt.detail || {}
+    const done = pendingImages.get(d.id)
+    if (!done) return
+    pendingImages.delete(d.id)
+    try { done(typeof d.dataUrl === 'string' && d.dataUrl.length > 0 ? d.dataUrl : null) } catch (e) {}
+  })
+  Neutralino.events.on('pet.chat.error', (evt) => {
+    const d = evt.detail || {}
+    clearPending()
+    setStatus(null)
+    addRow('err', typeof d.message === 'string' ? d.message : '出错了')
+  })
+  Neutralino.events.on('pet.status', (evt) => {
+    const d = evt.detail || {}
+    setStatus(typeof d.text === 'string' ? d.text : '')
+  })
+  Neutralino.events.on('pet.history', (evt) => { renderHistory(evt.detail || {}) })
+  Neutralino.events.on('pet.session', (evt) => {
+    const d = evt.detail || {}
+    if (typeof d.sessionId !== 'string' || d.sessionId.length === 0) {
+      sessionId = null
+      sessionLabel = ''
+      refreshSubtitle()
+      return
+    }
+    sessionId = d.sessionId
+    sessionLabel = typeof d.workspace === 'string' ? d.workspace : ''
+    refreshSubtitle()
+    addSys('已经接上 DSH 会话' + (sessionLabel ? ' · ' + sessionLabel : ''))
+  })
+  Neutralino.events.on('pet.init', (evt) => {
+    const d = evt.detail || {}
+    if (d.cell && Number.isFinite(d.cell.width) && Number.isFinite(d.cell.height)) setCellSize(d.cell.width, d.cell.height)
+    scale = Number.isFinite(d.savedScale) ? d.savedScale : (Number.isFinite(d.scale) ? d.scale : 1)
+    if (d.animations && d.animBase) {
+      animMode = true
+      animBase = d.animBase
+      animTracks = d.animations
+      petImg.style.display = 'block'
+      petImg.style.maxWidth = 'none'
+    } else if (d.spritesheetUrl && d.spritesheetUrl !== spriteUrl) {
+      spriteUrl = d.spritesheetUrl
+      atlasReady = false
+      atlas.src = spriteUrl
+    }
+    if (Number.isFinite(d.x) && Number.isFinite(d.y)) petAnchor = { x: Math.round(d.x), y: Math.round(d.y) }
+    const g = computeLayout(false)
+    L = g
+    petAnchor = { x: g.wx + g.petX, y: g.wy + g.petY }
+    try { Neutralino.window.setSize({ width: g.ww, height: g.wh }).catch(() => {}) } catch (e) {}
+    applyLayout()
+    if (animMode) setAnim('idle')
+    window.setTimeout(applyLayout, 150)
+  })
+  Neutralino.events.on('pet.frame', (evt) => { currentDirective = evt.detail || currentDirective; drawCurrent() })
+  Neutralino.events.on('pet.anim', (evt) => { const d = evt.detail || {}; if (d.phase) setAnim(d.phase) })
+  Neutralino.events.on('pet.atlas', (evt) => {
+    const d = evt.detail || {}
+    if (d.spritesheetUrl && d.spritesheetUrl !== spriteUrl) { spriteUrl = d.spritesheetUrl; atlasReady = false; atlas.src = spriteUrl }
+  })
+  function announceReady() { Neutralino.events.broadcast('pet.frontendReady', { t: Date.now() }) }
+  Neutralino.events.on('pet.handshakeQuery', announceReady)
+  announceReady()
+  window.addEventListener('resize', () => { applyLayout() })
+  refreshSubtitle()
+  showEmpty()
+  try { Neutralino.init() } catch (e) {}
+  // 无托盘图标：Neutralino 的托盘在 Win11 溢出区里点不动，改用桌面徽章 + 右键菜单收起/退出
+})()
+</script>
+</body>
+</html>
