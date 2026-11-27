@@ -294,10 +294,15 @@
     const chatScreenY = clamp(ay + size.petH - chatH, EDGE, Math.max(EDGE, sh - chatH - EDGE))
     const wy = Math.min(ay, chatScreenY)
     const contentBottom = Math.max(ay + size.petH, chatScreenY + chatH)
-    let wh = Math.round((contentBottom - wy) / (1 - BOTTOM_PAD_FRAC))
-    wh = Math.min(wh, sh - wy)
-    const wx = side === 'right' ? ax : ax - need
-    return { wx, wy, ww: need + size.petW, wh, petX: ax - wx, petY: ay - wy,
+    const ww = need + size.petW
+    let wx = side === 'right' ? ax : ax - need
+    if (wx > sw - ww) wx = Math.max(0, sw - ww)
+    if (wx > ax) wx = ax
+    if (wx < 0) wx = 0
+    // 关键：窗口高度按“内容全部落在可交互的顶部 75%”来算，绝不为了塞进屏幕而压缩内容，
+    // 否则底部 25% 的透明死区会盖住聊天框和宠物（点不动、被裁切）。窗口底部允许伸出屏幕。
+    const wh = Math.round((contentBottom - wy) / (1 - BOTTOM_PAD_FRAC))
+    return { wx, wy, ww, wh, petX: ax - wx, petY: ay - wy, petW: size.petW, petH: size.petH,
       chatX: side === 'right' ? size.petW + GAP : 0, chatY: chatScreenY - wy, chatW, chatH, side }
   }
   function applyLayout() {
@@ -381,8 +386,11 @@
   }
   let dragging = false
   let dragStart = null
+  let moveQueued = false
+  let pendingMoveX = 0
+  let pendingMoveY = 0
   canvas.addEventListener('pointerenter', showControls)
-  canvas.addEventListener('pointerleave', () => { if (dragging) endDrag(true); scheduleHideControls() })
+  canvas.addEventListener('pointerleave', () => { scheduleHideControls() })
   controls.addEventListener('pointerenter', showControls)
   controls.addEventListener('pointerleave', scheduleHideControls)
   canvas.addEventListener('pointerdown', (e) => {
@@ -403,7 +411,15 @@
     petAnchor = { x: clamp(Math.round(dragStart.ax + dx), 0, sw - L.petW), y: clamp(Math.round(dragStart.ay + dy), 0, sh - L.petH) }
     const g = computeLayout(chatOpen)
     L = { ...L, wx: g.wx, wy: g.wy, petX: g.petX, petY: g.petY, chatY: g.chatY }
-    try { Neutralino.window.move(g.wx, g.wy).catch(() => {}) } catch (err) {}
+    pendingMoveX = g.wx
+    pendingMoveY = g.wy
+    if (!moveQueued) {
+      moveQueued = true
+      requestAnimationFrame(() => {
+        moveQueued = false
+        try { Neutralino.window.move(pendingMoveX, pendingMoveY).catch(() => {}) } catch (err) {}
+      })
+    }
     try { Neutralino.events.broadcast('pet.dragMove', { direction: 'right' }) } catch (err) {}
   })
   function endDrag(cancelled) {
@@ -422,6 +438,8 @@
     else openChat()
   }
   canvas.addEventListener('pointerup', (e) => { if (e.button === 0) endDrag(false) })
+  canvas.addEventListener('pointercancel', () => endDrag(true))
+  canvas.addEventListener('lostpointercapture', () => { if (dragging) endDrag(true) })
   canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault()
     menu.style.left = Math.min(e.clientX, Math.max(0, L.ww / dpr() - 180)) + 'px'
