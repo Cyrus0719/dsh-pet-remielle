@@ -37,19 +37,18 @@
   "files": [
     "lib",
     "assets",
+    "runtime",
     "scripts/install-neutralino.mjs",
     "cordis.patch.yml",
     "README.md",
     "NOTICE.md",
-    "ASSET-USAGE.md"
+    "ASSET-USAGE.md",
+    "LICENSE"
   ],
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"
     }
-  },
-  "scripts": {
-    "postinstall": "node scripts/install-neutralino.mjs"
   },
   "dependencies": {
     "@deepseek-ai/schemastery": "^3.18.1"

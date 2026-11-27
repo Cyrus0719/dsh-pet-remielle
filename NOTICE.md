@@ -32,3 +32,7 @@
 当前仓库没有针对整套素材发布通用 `LICENSE`；`ASSET-USAGE.md` 仅提供有限的非商业署名使用说明。如需商业使用、长期公开分发或制作其他衍生作品，请先取得相关权利人的书面授权。
 
 如权利人认为仓库中的某项内容不适合公开，请通过 GitHub 仓库渠道提出移除或调整请求。
+
+## 第三方运行时
+
+ runtime/neutralino-win_x64.exe 是 [Neutralinojs](https://github.com/neutralinojs/neutralinojs) v6.9.0 的 Windows x64 运行时（MIT），随包分发以便免去 postinstall 下载；也可用 node scripts/install-neutralino.mjs 重新获取。
