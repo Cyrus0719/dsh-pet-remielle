@@ -9,7 +9,7 @@
     font-family: "Microsoft YaHei UI", "PingFang SC", "Segoe UI", system-ui, sans-serif; }
   #pet { position: fixed; left: 0; top: 0; display: block; }
   #petimg { position: fixed; left: 0; top: 0; pointer-events: none; display: none; }
-  #badge { position: fixed; left: 0; top: 0; width: 64px; height: 64px; display: none; cursor: pointer;
+  #badge { position: fixed; left: 0; top: 0; width: 64px; height: 64px; display: none; cursor: grab;
     border-radius: 50%; border: 2px solid rgba(255,168,198,.95);
     background: radial-gradient(circle at 34% 28%, #fff, #ffe1ec 62%, #ffd0e2);
     box-shadow: 0 8px 22px rgba(255,120,170,.42); overflow: hidden; }
@@ -89,6 +89,7 @@
   #menu button:hover { background: #f6f1f3; }
   #menu button.danger { color: #b4465c; }
   #menu .sep { height: 1px; background: rgba(0,0,0,.06); margin: 4px 6px; }
+#menu .tip { font-size: 10.5px; line-height: 1.5; color: #a99aa4; padding: 2px 10px 6px; }
 
   /* ---- design v3 ---- */
   #chat {
@@ -220,8 +221,9 @@
   <button id="menu-session">新开一个会话</button>
   <button id="menu-webui">在 DSH 里打开</button>
   <div class="sep"></div>
-  <button id="menu-hide">收起</button>
-  <button id="menu-quit" class="danger">退出蕾米埃尔</button>
+  <button id="menu-hide">收起成小圆（可拖动）</button>
+  <button id="menu-quit" class="danger">完全关闭蕾米埃尔</button>
+  <div class="tip">完全关闭后，在 DSH 会话里发 /pet on 就能叫回来。</div>
 </div>
 <script src="neutralino.js"></script>
 <script src="pet-render.js"></script>
@@ -767,15 +769,57 @@
     canvas.style.display = 'block'
     if (animMode) petImg.style.display = 'block'
     pushLayout(computeLayout(chatOpen))
+    try { Neutralino.events.broadcast('pet.drag', { x: petAnchor.x, y: petAnchor.y }) } catch (e) {}
   }
-  badge.addEventListener('click', expandPet)
+  let badgeDrag = null
+  badge.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return
+    e.preventDefault()
+    hideMenu()
+    badgeDrag = { px: e.screenX, py: e.screenY, ax: petAnchor.x, ay: petAnchor.y, moved: false }
+    badge.style.cursor = 'grabbing'
+    try { badge.setPointerCapture(e.pointerId) } catch (err) {}
+  })
+  badge.addEventListener('pointermove', (e) => {
+    if (!badgeDrag) return
+    const d = dpr()
+    const dx = (e.screenX - badgeDrag.px) * d
+    const dy = (e.screenY - badgeDrag.py) * d
+    if (!badgeDrag.moved && Math.abs(dx) < 3 && Math.abs(dy) < 3) return
+    badgeDrag.moved = true
+    const sw = Math.round(screen.width * d), sh = Math.round(screen.height * d)
+    petAnchor = { x: clamp(Math.round(badgeDrag.ax + dx), 0, sw - BADGE_SIZE), y: clamp(Math.round(badgeDrag.ay + dy), 0, sh - BADGE_SIZE) }
+    pendingMoveX = petAnchor.x
+    pendingMoveY = petAnchor.y
+    if (!moveQueued) {
+      moveQueued = true
+      requestAnimationFrame(() => {
+        moveQueued = false
+        try { Neutralino.window.move(pendingMoveX, pendingMoveY).catch(() => {}) } catch (err) {}
+      })
+    }
+  })
+  function endBadgeDrag(expand) {
+    if (!badgeDrag) return
+    const moved = badgeDrag.moved
+    badgeDrag = null
+    badge.style.cursor = 'grab'
+    if (moved) {
+      try { Neutralino.events.broadcast('pet.drag', { x: petAnchor.x, y: petAnchor.y }) } catch (e) {}
+      return
+    }
+    if (expand) expandPet()
+  }
+  badge.addEventListener('pointerup', (e) => { if (e.button === 0) endBadgeDrag(true) })
+  badge.addEventListener('pointercancel', () => endBadgeDrag(false))
+  badge.addEventListener('lostpointercapture', () => endBadgeDrag(false))
   badge.addEventListener('contextmenu', (e) => {
     e.preventDefault()
     expandPet()
     window.setTimeout(() => { menu.style.left = '8px'; menu.style.top = '8px'; menu.style.display = 'block' }, 160)
   })
   function quitApp() {
-    try { Neutralino.events.broadcast('pet.quit', {}) } catch (e) {}
+    try { Neutralino.events.broadcast('pet.quit', { disable: true }) } catch (e) {}
     setTimeout(() => { try { Neutralino.app.exit() } catch (e) {} }, 300)
   }
   Neutralino.events.on('pet.chat.delta', (evt) => {
@@ -857,6 +901,11 @@
     L = g
     petAnchor = { x: g.wx + g.petX, y: g.wy + g.petY }
     try { Neutralino.window.setSize({ width: g.ww, height: g.wh }).catch(() => {}) } catch (e) {}
+    // 存档位置可能已经被收起的圆拖到屏幕边缘；展开后要夹回可见区域并写回。
+    try { Neutralino.window.move(g.wx, g.wy).catch(() => {}) } catch (e) {}
+    if (Number.isFinite(d.x) && Number.isFinite(d.y) && (g.wx !== Math.round(d.x) || g.wy !== Math.round(d.y))) {
+      try { Neutralino.events.broadcast('pet.drag', { x: petAnchor.x, y: petAnchor.y }) } catch (e) {}
+    }
     applyLayout()
     if (animMode) setAnim('idle')
     window.setTimeout(applyLayout, 150)
