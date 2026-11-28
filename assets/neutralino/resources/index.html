@@ -196,6 +196,38 @@
   #menu .starhint:hover { color: #c25f86; }
   #menu .starhint .stxt { flex: 1; }
   #menu .starhint .sgo { color: #d4779d; font-size: 11px; }
+
+  /* ---- markdown ---- */
+  .bubble.md { white-space: normal; }
+  .bubble.md > :first-child { margin-top: 0; }
+  .bubble.md > :last-child { margin-bottom: 0; }
+  .bubble.md p { margin: 0 0 6px; }
+  .bubble.md p:last-child { margin-bottom: 0; }
+  .bubble.md .md-h1 { font-size: 15px; font-weight: 700; margin: 8px 0 5px; color: #3a2a31; }
+  .bubble.md .md-h2 { font-size: 14px; font-weight: 700; margin: 8px 0 4px; color: #3a2a31; }
+  .bubble.md .md-h3, .bubble.md .md-h4, .bubble.md .md-h5, .bubble.md .md-h6 { font-size: 13px; font-weight: 700; margin: 7px 0 3px; color: #4a333d; }
+  .bubble.md code { font-family: "Cascadia Code", "JetBrains Mono", Consolas, monospace; font-size: 11.5px; background: #fbf0f5; color: #a4436a; padding: 1px 4px; border-radius: 5px; }
+  .bubble.md pre { background: #fdf5f9; border: 1px solid #f2e1e9; border-radius: 10px; padding: 8px 10px; margin: 6px 0; overflow-x: auto; }
+  .bubble.md pre code { background: none; color: #4d3742; padding: 0; font-size: 11px; line-height: 1.55; white-space: pre; display: block; }
+  .bubble.md ul, .bubble.md ol { margin: 4px 0; padding-left: 19px; }
+  .bubble.md li { margin: 2px 0; }
+  .bubble.md blockquote { margin: 6px 0; padding: 3px 0 3px 9px; border-left: 2px solid #f0c2d5; color: #806a75; }
+  .bubble.md hr { border: 0; border-top: 1px solid #f1e4ea; margin: 8px 0; }
+  .bubble.md a { color: #c05a83; text-decoration: underline; text-underline-offset: 2px; }
+  .bubble.md .md-table { margin: 6px 0; overflow-x: auto; }
+  .bubble.md table { border-collapse: collapse; width: 100%; font-size: 11.5px; }
+  .bubble.md th, .bubble.md td { border: 1px solid #f0e2e8; padding: 4px 7px; text-align: left; vertical-align: top; }
+  .bubble.md th { background: #fff3f8; font-weight: 600; color: #6b4d59; }
+  .bubble.md tr:nth-child(even) td { background: #fffafc; }
+  /* ---- chat resize grip ---- */
+  #chat-resize { position: absolute; bottom: 0; width: 22px; height: 22px; z-index: 7; opacity: 0; cursor: nwse-resize; transition: opacity .15s ease; touch-action: none; }
+  #chat[data-side="left"] #chat-resize { left: 0; right: auto; cursor: nesw-resize; }
+  #chat[data-side="right"] #chat-resize { right: 0; left: auto; }
+  #chat:hover #chat-resize, #chat-resize:hover { opacity: .9; }
+  #chat-resize::before { content: ""; position: absolute; bottom: 4px; right: 4px; width: 11px; height: 11px;
+    background: repeating-linear-gradient(135deg, rgba(196,130,158,0) 0 2.5px, rgba(196,130,158,.62) 2.6px 3.8px);
+    border-bottom-right-radius: 5px; }
+  #chat[data-side="left"] #chat-resize::before { right: auto; left: 4px; transform: scaleX(-1); }
 </style>
 </head>
 <body>
@@ -231,6 +263,7 @@
     <button id="chat-send" title="发送">↑</button>
   </div>
   <div id="hint">Enter 发送 · Shift + Enter 换行</div>
+  <div id="chat-resize" title="拖动调整大小"></div>
 </div>
 <div id="lightbox"><img alt=""></div>
 <div id="menu">
@@ -256,10 +289,13 @@
   const lightbox = document.getElementById('lightbox')
   const hit = document.getElementById('hit')
   const chatSub = document.getElementById('chat-sub')
+  const chatResizeEl = document.getElementById('chat-resize')
   const statusBox = document.getElementById('status')
   const statusText = document.getElementById('status-text')
   const menu = document.getElementById('menu')
   const GAP = 24, CHAT_W = 420, CHAT_H = 620, EDGE = 8, BADGE_SIZE = 64
+  const CHAT_MIN_W = 300, CHAT_MIN_H = 360
+  let chatW = CHAT_W, chatH = CHAT_H, chatTopShift = 0
   let scale = 1
   let chatOpen = false
   let collapsed = false
@@ -280,6 +316,8 @@
   let sessionLabel = ''
   let pendingRow = null
   let pendingBubble = null
+  let pendingRaw = ''
+  let streamRenderTimer = 0
   let busy = false
   let attachPaths = []
   let imageSeq = 0
@@ -301,17 +339,20 @@
       return { wx: ax, wy: clamp(ay, 0, Math.max(0, sh - closedH)), ww: size.petW, wh: closedH,
         petX: 0, petY: 0, petW: size.petW, petH: size.petH, chatX: 0, chatY: 0, chatW: 0, chatH: 0, side: null }
     }
-    const chatH = Math.min(CHAT_H, sh - EDGE * 2), chatW = Math.min(CHAT_W, sw - EDGE * 2)
-    const need = chatW + GAP
+    const maxChatW = Math.max(CHAT_MIN_W, sw - size.petW - GAP - EDGE)
+    const maxChatH = Math.max(CHAT_MIN_H, sh - EDGE * 2)
+    const useW = Math.round(clamp(chatW, CHAT_MIN_W, maxChatW))
+    const useH = Math.round(clamp(chatH, CHAT_MIN_H, maxChatH))
+    const need = useW + GAP
     const rightSpace = sw - (ax + size.petW), leftSpace = ax
     let side
     if (rightSpace >= need) side = 'right'
     else if (leftSpace >= need) side = 'left'
     else side = rightSpace >= leftSpace ? 'right' : 'left'
     chatSide = side
-    const chatScreenY = clamp(ay + size.petH - chatH, EDGE, Math.max(EDGE, sh - chatH - EDGE))
+    const chatScreenY = clamp(ay + size.petH - useH + chatTopShift, EDGE, Math.max(EDGE, sh - useH - EDGE))
     const wy = Math.min(ay, chatScreenY)
-    const contentBottom = Math.max(ay + size.petH, chatScreenY + chatH)
+    const contentBottom = Math.max(ay + size.petH, chatScreenY + useH)
     const ww = need + size.petW
     let wx = side === 'right' ? ax : ax - need
     if (wx > sw - ww) wx = Math.max(0, sw - ww)
@@ -321,7 +362,7 @@
     // 否则底部 25% 的透明死区会盖住聊天框和宠物（点不动、被裁切）。窗口底部允许伸出屏幕。
     const wh = Math.round((contentBottom - wy) / (1 - BOTTOM_PAD_FRAC))
     return { wx, wy, ww, wh, petX: ax - wx, petY: ay - wy, petW: size.petW, petH: size.petH,
-      chatX: side === 'right' ? size.petW + GAP : 0, chatY: chatScreenY - wy, chatW, chatH, side }
+      chatX: side === 'right' ? size.petW + GAP : 0, chatY: chatScreenY - wy, chatW: useW, chatH: useH, side }
   }
   function applyLayout() {
     if (collapsed) return
@@ -339,6 +380,7 @@
     const total = 24 * 3 + 6 * 2
     controls.style.left = clamp((L.petX + L.petW) / d - total - 8, 0, Math.max(0, L.ww / d - total)) + 'px'
     controls.style.top = ((L.petY + 8) / d) + 'px'
+    chat.dataset.side = L.side === 'left' ? 'left' : 'right'
     if (chatOpen) {
       chat.style.left = (L.chatX / d) + 'px'
       chat.style.top = (L.chatY / d) + 'px'
@@ -479,6 +521,17 @@
   })
   document.addEventListener('pointerdown', (e) => { if (!menu.contains(e.target)) hideMenu() })
   function scrollLog() { chatLog.scrollTop = chatLog.scrollHeight }
+  function nearBottom() { return chatLog.scrollHeight - chatLog.scrollTop - chatLog.clientHeight < 90 }
+  function scheduleStreamRender() {
+    if (streamRenderTimer) return
+    streamRenderTimer = window.setTimeout(() => {
+      streamRenderTimer = 0
+      if (!pendingBubble) return
+      const stick = nearBottom()
+      renderAnswer(pendingBubble, pendingRaw)
+      if (stick) scrollLog()
+    }, 90)
+  }
   function normalizePath(path) {
     if (typeof path !== 'string') return ''
     let value = path.replace(/^file:\/\//i, '')
@@ -532,26 +585,183 @@
     }
     if (box.childElementCount > 0) bubble.appendChild(box)
   }
-  // Split answer text into plain runs and image references, rendering the latter inline.
-  function appendRichText(bubble, text) {
-    const re = /!\[([^\]]*)\]\(([^)\s]+)\)|((?:https?:\/\/|[A-Za-z]:[\\/])[^\s"'<>]*?\.(?:png|jpe?g|webp|gif|bmp))/gi
+  // ---- markdown rendering (DOM only, no raw HTML) ----
+  function mdImageEl(src, alt) {
+    const im = imageEl('inline')
+    im.alt = alt || ''
+    fillImage(im, src)
+    return im
+  }
+  function mdLinkEl(label, url) {
+    const a = document.createElement('a')
+    a.textContent = label
+    a.href = url
+    a.title = url
+    a.addEventListener('click', (e) => { e.preventDefault(); try { Neutralino.os.open(url) } catch (err) {} })
+    return a
+  }
+  function mdInline(parent, text) {
+    const re = /(!\[([^\]]*)\]\(([^)\s]+)\))|(\[([^\]]+)\]\(([^)\s]+)\))|(\x60([^\x60\n]+)\x60)|(\*\*([^*\n]+)\*\*)|(__([^_\n]+)__)|(~~([^~\n]+)~~)|(\*([^*\n]+)\*)|(_([^_\n]+)_)|((?:https?:\/\/|(?:[A-Za-z]:[\\/]|\.{1,2}[\\/]))[^\s"'<>]*?\.(?:png|jpe?g|webp|gif|bmp))/gi
     let last = 0
-    let match
-    while ((match = re.exec(text)) !== null) {
-      const src = match[2] || match[3]
-      if (!src) continue
-      if (match.index > last) bubble.appendChild(document.createTextNode(text.slice(last, match.index)))
-      const im = imageEl('inline')
-      fillImage(im, src)
-      bubble.appendChild(im)
+    let m
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > last) parent.appendChild(document.createTextNode(text.slice(last, m.index)))
+      if (m[3]) parent.appendChild(mdImageEl(m[3], m[2]))
+      else if (m[6]) parent.appendChild(mdLinkEl(m[5], m[6]))
+      else if (m[8]) {
+        const c = document.createElement('code')
+        c.textContent = m[8]
+        parent.appendChild(c)
+      } else if (m[10] || m[12]) {
+        const b = document.createElement('strong')
+        mdInline(b, m[10] || m[12])
+        parent.appendChild(b)
+      } else if (m[14]) {
+        const s = document.createElement('s')
+        mdInline(s, m[14])
+        parent.appendChild(s)
+      } else if (m[16] || m[18]) {
+        const em = document.createElement('em')
+        mdInline(em, m[16] || m[18])
+        parent.appendChild(em)
+      } else if (m[19]) {
+        if (/^https?:/i.test(m[19])) parent.appendChild(mdLinkEl(m[19], m[19]))
+        else parent.appendChild(mdImageEl(m[19], ''))
+      }
       last = re.lastIndex
     }
-    if (last < text.length) bubble.appendChild(document.createTextNode(text.slice(last)))
+    if (last < text.length) parent.appendChild(document.createTextNode(text.slice(last)))
+  }
+  function mdSplitRow(line) {
+    let s = line.trim()
+    if (s.startsWith('|')) s = s.slice(1)
+    if (s.endsWith('|')) s = s.slice(0, -1)
+    return s.split('|').map((cell) => cell.trim())
+  }
+  function mdIsDivider(line) {
+    if (line.indexOf('|') < 0) return false
+    const cells = mdSplitRow(line)
+    if (cells.length === 0) return false
+    return cells.every((cell) => /^:?-{2,}:?$/.test(cell.replace(/\s/g, '')))
+  }
+  function mdStartsBlock(lines, i) {
+    const line = lines[i]
+    if (/^\s{0,3}(#{1,6}\s|\x60{3,}|>|([-*+]|\d+[.)])\s+)/.test(line)) return true
+    if (/^\s{0,3}([-*_])(\s*\1){2,}\s*$/.test(line)) return true
+    return i + 1 < lines.length && mdIsDivider(lines[i + 1])
+  }
+  function renderMarkdown(text) {
+    const frag = document.createDocumentFragment()
+    const source = typeof text === 'string' ? text.replace(/\r\n/g, '\n') : ''
+    const lines = source.split('\n')
+    let i = 0
+    while (i < lines.length) {
+      const line = lines[i]
+      if (!line.trim()) { i++; continue }
+      const fence = line.match(/^\s{0,3}\x60{3,}\s*([A-Za-z0-9_+-]*)\s*$/)
+      if (fence) {
+        const code = []
+        i++
+        while (i < lines.length && !/^\s{0,3}\x60{3,}\s*$/.test(lines[i])) { code.push(lines[i]); i++ }
+        if (i < lines.length) i++
+        const pre = document.createElement('pre')
+        const codeEl = document.createElement('code')
+        codeEl.textContent = code.join('\n')
+        pre.appendChild(codeEl)
+        frag.appendChild(pre)
+        continue
+      }
+      const h = line.match(/^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$/)
+      if (h) {
+        const d = document.createElement('div')
+        d.className = 'md-h' + h[1].length
+        mdInline(d, h[2])
+        frag.appendChild(d)
+        i++
+        continue
+      }
+      if (/^\s{0,3}([-*_])(\s*\1){2,}\s*$/.test(line)) {
+        frag.appendChild(document.createElement('hr'))
+        i++
+        continue
+      }
+      if (line.indexOf('|') >= 0 && i + 1 < lines.length && mdIsDivider(lines[i + 1])) {
+        const head = mdSplitRow(line)
+        const table = document.createElement('table')
+        const thead = document.createElement('thead')
+        const headRow = document.createElement('tr')
+        head.forEach((cell) => {
+          const th = document.createElement('th')
+          mdInline(th, cell)
+          headRow.appendChild(th)
+        })
+        thead.appendChild(headRow)
+        table.appendChild(thead)
+        i += 2
+        const tbody = document.createElement('tbody')
+        while (i < lines.length && lines[i].trim() && lines[i].indexOf('|') >= 0) {
+          const cells = mdSplitRow(lines[i])
+          const tr = document.createElement('tr')
+          for (let k = 0; k < head.length; k++) {
+            const td = document.createElement('td')
+            mdInline(td, cells[k] || '')
+            tr.appendChild(td)
+          }
+          tbody.appendChild(tr)
+          i++
+        }
+        table.appendChild(tbody)
+        const wrap = document.createElement('div')
+        wrap.className = 'md-table'
+        wrap.appendChild(table)
+        frag.appendChild(wrap)
+        continue
+      }
+      if (/^\s{0,3}>/.test(line)) {
+        const quote = document.createElement('blockquote')
+        while (i < lines.length && /^\s{0,3}>/.test(lines[i])) {
+          if (quote.childNodes.length > 0) quote.appendChild(document.createElement('br'))
+          mdInline(quote, lines[i].replace(/^\s{0,3}>\s?/, ''))
+          i++
+        }
+        frag.appendChild(quote)
+        continue
+      }
+      if (/^\s{0,3}([-*+]|\d+[.)])\s+/.test(line)) {
+        const ordered = /^\s{0,3}\d/.test(line)
+        const list = document.createElement(ordered ? 'ol' : 'ul')
+        while (i < lines.length) {
+          const m = lines[i].match(/^\s{0,3}([-*+]|\d+[.)])\s+(.*)$/)
+          if (!m) break
+          const li = document.createElement('li')
+          mdInline(li, m[2])
+          list.appendChild(li)
+          i++
+        }
+        frag.appendChild(list)
+        continue
+      }
+      const p = document.createElement('p')
+      while (i < lines.length) {
+        const cur = lines[i]
+        if (!cur.trim()) break
+        if (p.childNodes.length > 0) {
+          if (mdStartsBlock(lines, i)) break
+          p.appendChild(document.createElement('br'))
+        }
+        mdInline(p, cur.trim())
+        i++
+      }
+      if (p.childNodes.length === 0) { i++; continue }
+      frag.appendChild(p)
+    }
+    return frag
   }
   function renderAnswer(bubble, text) {
-    bubble.innerHTML = ''
     bubble.dataset.started = '1'
-    appendRichText(bubble, typeof text === 'string' ? text : '')
+    bubble.classList.add('md')
+    bubble.innerHTML = ''
+    bubble.appendChild(renderMarkdown(text))
   }
   function refreshAttachRow() {
     attachRow.innerHTML = ''
@@ -688,12 +898,15 @@
   }
   function clearPending() {
     if (pendingRow) { pendingRow.remove(); pendingRow = null; pendingBubble = null }
+    pendingRaw = ''
+    if (streamRenderTimer) { window.clearTimeout(streamRenderTimer); streamRenderTimer = 0 }
     setIdleUi()
   }
   function showTyping() {
     const built = addRow('pet', '', { html: '<span class="typing"><i></i><i></i><i></i></span>' })
     pendingRow = built.row
     pendingBubble = built.bubble
+    pendingRaw = ''
     busy = true
     chatSend.classList.add('busy')
     chatSend.textContent = '■'
@@ -761,8 +974,52 @@
     chat.style.display = 'none'
     if (anchorBefore) petAnchor = { x: anchorBefore.x, y: anchorBefore.y }
     anchorBefore = null
+    chatTopShift = 0
     pushLayout(computeLayout(false))
   }
+  let chatResize = null
+  let resizeQueued = false
+  function queueResizeLayout() {
+    if (resizeQueued) return
+    resizeQueued = true
+    requestAnimationFrame(() => {
+      resizeQueued = false
+      if (chatResize) pushLayout(computeLayout(true))
+    })
+  }
+  chatResizeEl.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0 || !chatOpen) return
+    e.preventDefault()
+    e.stopPropagation()
+    chatResize = { px: e.screenX, py: e.screenY, w: chatW, h: chatH, side: L.side === 'left' ? 'left' : 'right', top: L.wy + L.chatY }
+    try { chatResizeEl.setPointerCapture(e.pointerId) } catch (err) {}
+  })
+  chatResizeEl.addEventListener('pointermove', (e) => {
+    if (!chatResize) return
+    e.preventDefault()
+    const d = dpr()
+    const dx = (e.screenX - chatResize.px) * d
+    const dy = (e.screenY - chatResize.py) * d
+    const outward = chatResize.side === 'left' ? -dx : dx
+    const sw = Math.round(screen.width * d), sh = Math.round(screen.height * d)
+    const pet = petSize()
+    const maxW = Math.max(CHAT_MIN_W, sw - pet.petW - GAP - EDGE)
+    chatW = Math.round(clamp(chatResize.w + outward, CHAT_MIN_W, maxW))
+    chatH = Math.round(clamp(chatResize.h + dy, CHAT_MIN_H, Math.max(CHAT_MIN_H, sh - EDGE * 2)))
+    const ay = Math.round(clamp(petAnchor.y, 0, Math.max(0, sh - pet.petH)))
+    chatTopShift = clamp(chatResize.top - (ay + pet.petH - chatH), -sh, sh)
+    queueResizeLayout()
+  })
+  function endChatResize(persist) {
+    if (!chatResize) return
+    chatResize = null
+    if (persist) {
+      try { Neutralino.events.broadcast('pet.saveChatSize', { width: Math.round(chatW), height: Math.round(chatH) }) } catch (e) {}
+    }
+  }
+  chatResizeEl.addEventListener('pointerup', () => endChatResize(true))
+  chatResizeEl.addEventListener('pointercancel', () => endChatResize(false))
+  chatResizeEl.addEventListener('lostpointercapture', () => endChatResize(true))
   chatSend.addEventListener('click', () => {
     if (busy) { try { Neutralino.events.broadcast('pet.chat', { type: 'cancel' }) } catch (e) {} return }
     sendChat()
@@ -878,12 +1135,14 @@
       pendingBubble = built.bubble
     }
     if (pendingBubble.dataset.started !== '1') { pendingBubble.textContent = ''; pendingBubble.dataset.started = '1' }
-    pendingBubble.textContent += d.text
-    scrollLog()
+    pendingRaw += d.text
+    scheduleStreamRender()
   })
   Neutralino.events.on('pet.chat.done', (evt) => {
     const d = evt.detail || {}
     const text = typeof d.text === 'string' ? d.text : ''
+    pendingRaw = ''
+    if (streamRenderTimer) { window.clearTimeout(streamRenderTimer); streamRenderTimer = 0 }
     let rendered = false
     if (pendingBubble && text.length > 0) {
       renderAnswer(pendingBubble, text)
@@ -939,6 +1198,10 @@
     const d = evt.detail || {}
     if (d.cell && Number.isFinite(d.cell.width) && Number.isFinite(d.cell.height)) setCellSize(d.cell.width, d.cell.height)
     scale = Number.isFinite(d.savedScale) ? d.savedScale : (Number.isFinite(d.scale) ? d.scale : 1)
+    if (d.savedChat && Number.isFinite(d.savedChat.width) && Number.isFinite(d.savedChat.height)) {
+      chatW = Math.round(clamp(d.savedChat.width, CHAT_MIN_W, 1200))
+      chatH = Math.round(clamp(d.savedChat.height, CHAT_MIN_H, 1600))
+    }
     if (d.animations && d.animBase) {
       animMode = true
       animBase = d.animBase

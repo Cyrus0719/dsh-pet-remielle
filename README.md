@@ -17,6 +17,8 @@
 - **真桌面窗**：独立 Neutralino 窗口（透明 / 无边框 / 置顶 / 不进任务栏），6 个状态的原生 340×304 动画 WebP（待机、思考、工具调用、边想边写、等待、完成），30 ms 原始帧率，放大也不糊。
 - **能干活**：在桌面上说一句话，她就开一个真实的 DSH 智能体会话去做（当前工作区、workspace-write）。调工具、跑命令、读文件的全过程都发生在 DSH 里，会话同时出现在 Web GUI，可以接着聊、接着派活。
 - **图片与 emoji**：输入框 ＋ 发图（png/jpg/webp/gif/bmp，最多 4 张）；她的回复 emoji 彩色渲染，回复里的图片路径或 URL 自动内联成缩略图，点开看大图。
+- **Markdown 排版**：回复按 Markdown 渲染——标题、粗体、删除线、行内代码、可横向滚动的代码块、有序 / 无序列表、引用、链接、表格；流式输出边写边排版。
+- **聊天窗可缩放**：拖聊天卡片外侧底角的小把手改变宽高（最小 300×360），尺寸写进 ui.json，下次打开还是这个大小。
 - **四向自适应**：她在屏幕右半边，聊天卡片向左展开；在左半边，向右展开；靠近上下边缘自动收进屏幕。开合聊天时她本人一动不动。
 - **全屏让位**：前台是全屏游戏或全屏视频时自动取消置顶并隐藏，退出全屏自动回来。
 - **可拖可收可关**：右上角 − / + / × 调整大小与收起；64×64 小圆可以像宠物一样拖动，单击展开。右键菜单只有「退出」，退出后在 DSH 会话里发 `/pet on` 就能叫回来。
@@ -87,6 +89,7 @@ plugin_manager remove_bundle target="dsh-pet-remielle-desktop"
 | 拖动小圆 / 单击小圆 | 换位置（记住） / 展开回宠物 |
 | 聊天头部 ⟲ / ↗ / × | 新会话 / 在 DSH Web GUI 打开该会话 / 收起聊天 |
 | 输入框 ＋ | 选图片发给她（最多 4 张） |
+| 拖动聊天卡片外侧底角的把手 | 调整聊天卡片宽高（记住） |
 | Enter / Shift+Enter | 发送 / 换行 |
 
 「退出」会结束窗口和它自己的进程，插件本身仍然开着。叫回来的办法：
@@ -100,7 +103,7 @@ plugin_manager remove_bundle target="dsh-pet-remielle-desktop"
 
 - `%USERPROFILE%\.dsh\desktop-pet\chat.json` — 最近 60 条对话 + 当前会话 id
 - `%USERPROFILE%\.dsh\desktop-pet\position.json` — 窗口坐标
-- `%USERPROFILE%\.dsh\desktop-pet\ui.json` — 缩放比例
+- `%USERPROFILE%\.dsh\desktop-pet\ui.json` — 缩放比例与聊天卡片尺寸
 
 对话本体在 DSH 会话里（chat.json 只是摘录），所以能在 DSH Web GUI 的会话历史里找到同一个 session 继续聊。
 
@@ -126,7 +129,12 @@ plugin_manager remove_bundle target="dsh-pet-remielle-desktop"
 
 换宠物：在 `assets/pets/<id>/` 放同名结构的 `pet.json` + 透明动画 WebP，把 `cordis.patch.yml` 里的 `petId` 改掉；也可以放进 `%USERPROFILE%\.dsh\desktop-pet\pets\<id>\`（用户目录优先于包内）。
 
-## 1.3.0 更新
+## 1.4.0 更新
+
+- 回复支持 Markdown 渲染：标题、粗体、斜体、删除线、行内代码、代码块、有序 / 无序列表、引用、链接、图片与表格；流式输出时边写边排版，历史消息也会重新排版。
+- 聊天卡片可拖动缩放：拖卡片外侧底角的把手改变宽高，尺寸持久化。
+
+### 1.3.0
 
 - 打开聊天时新增「接着上次聊的」建议：用模型总结最近对话，给出 1–2 条具体、可点击执行的下一步。
 - 删掉固定的打招呼、三个预设问题与首次启动自动弹窗。
@@ -136,7 +144,7 @@ plugin_manager remove_bundle target="dsh-pet-remielle-desktop"
 ## 实现说明
 
 - 窗口后端、状态机、宠物目录约定来自 [dsh-desktop-pet](https://github.com/sereinmono/dsh-desktop-pet)（MIT）。
-- 本包在它基础上的工作：原生分辨率动画帧流（不再用 8×9 精灵图）、聊天卡片（真实 DSH 会话 / 图片 / emoji / 四向布局 / 自动滚到底）、状态机修复（`tool/result` 不回落导致「一直画画」、断开会话残留任务）、全屏让位、缩放与位置持久化、可拖动收起徽章、去托盘、基于最近对话的 AI 下一步建议。
+- 本包在它基础上的工作：原生分辨率动画帧流（不再用 8×9 精灵图）、聊天卡片（真实 DSH 会话 / 图片 / emoji / 四向布局 / 自动滚到底）、状态机修复（`tool/result` 不回落导致「一直画画」、断开会话残留任务）、全屏让位、缩放与位置持久化、可拖动收起徽章、去托盘、基于最近对话的 AI 下一步建议、Markdown 渲染与可缩放聊天卡片。
 - 前端是 `assets/neutralino/resources/index.html` 一份文件；host 是 `lib/index.js`。
 
 ## 素材与署名（重要）

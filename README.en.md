@@ -17,6 +17,8 @@ A transparent, always-on-top desktop pet for **DeepSeek Harness** on Windows: 75
 - **A real desktop window**: a dedicated Neutralino window (transparent / borderless / always-on-top / hidden from the taskbar) playing six native 340×304 animated WebPs at the original 30 ms frame rate. Crisp at any scale.
 - **She works**: say something on the desktop and she opens a real DSH agent session (current workspace, workspace-write). Tool calls, commands and file reads all happen inside DSH; the same session shows up in the DSH Web GUI, so you can keep talking or assign more work there.
 - **Images and emoji**: attach up to four images with the ＋ button; emoji render in full color, and image paths or URLs in her replies become inline thumbnails you can click to enlarge.
+- **Markdown layout**: replies render as Markdown — headings, bold, strikethrough, inline code, horizontally scrollable code blocks, ordered / unordered lists, quotes, links and tables; streaming replies are typeset as they arrive.
+- **Resizable chat card**: drag the small handle on the outer bottom corner of the card to change its width and height (300×360 minimum); the size is stored in ui.json and restored next time.
 - **Four-way layout**: she sits on the right half, the card opens left; left half, it opens right; near the top or bottom, it slides back on screen. Her own position never moves when the card opens.
 - **Full-screen yield**: when a full-screen game or video is in front, she drops always-on-top and hides; she comes back when you leave full screen.
 - **Drag, collapse, close**: − / + / × on hover resize and collapse her into a draggable 64×64 badge that expands on click. The context menu only has “Quit”; bring her back with `/pet on` in any DSH session.
@@ -87,6 +89,7 @@ Then delete `%USERPROFILE%\.dsh\desktop-pet` (conversation, position and scale l
 | Drag / click the badge | Move (remembered) / expand back to the pet |
 | Chat header ⟲ / ↗ / × | New session / open it in the DSH Web GUI / close the card |
 | ＋ in the composer | Attach images (up to 4) |
+| Drag the handle at the card's outer bottom corner | Resize the chat card (remembered) |
 | Enter / Shift+Enter | Send / new line |
 
 “Quit” ends the window and its process; the plugin itself stays enabled. To bring her back:
@@ -100,7 +103,7 @@ Use the × on hover when you only want her out of the way — position and conve
 
 - `%USERPROFILE%\.dsh\desktop-pet\chat.json` — last 60 turns + current session id
 - `%USERPROFILE%\.dsh\desktop-pet\position.json` — window position
-- `%USERPROFILE%\.dsh\desktop-pet\ui.json` — scale
+- `%USERPROFILE%\.dsh\desktop-pet\ui.json` — scale and chat card size
 
 The conversation itself lives in the DSH session (chat.json is only a transcript excerpt), so the same session can be resumed from the DSH Web GUI.
 
@@ -126,18 +129,27 @@ The conversation itself lives in the DSH session (chat.json is only a transcript
 
 To use another pet, drop the same structure into `assets/pets/<id>/` (a `pet.json` plus transparent animated WebPs) and change `petId` in `cordis.patch.yml`. You can also place it in `%USERPROFILE%\.dsh\desktop-pet\pets\<id>\` — the user directory wins over the bundled one.
 
-## What's new in 1.2.0
+## What's new in 1.4.0
 
-- New context-menu item: send the pet back to the bottom-right corner when she ends up off screen.
-- New ⭐ entry at the bottom of the menu, opening the GitHub repository.
-- First launch opens the chat card with a greeting (once).
-- The chat header now says “say something to start” before a session exists.
-- Fixed: the full-screen watcher script was missing from the package, so she stayed on top of full-screen games; the collapsed badge was clipped at 150% DPI; `/pet on` could not restore her after a full close.
+- Replies render as Markdown: headings, bold, italics, strikethrough, inline code, code blocks, ordered / unordered lists, quotes, links, images and tables; streaming replies are typeset live and older turns are re-rendered too.
+- The chat card is resizable: drag the handle at its outer bottom corner; the size is persisted.
+
+### 1.3.0
+
+- “Picks up where you left off” suggestions when the chat card opens: a model summarizes the recent turns into 1–2 concrete, one-click next steps.
+- Removed the fixed greeting, the three preset questions and the first-launch popup.
+- The context menu is just “Quit”; the star entry became a small line with a ⭐ and ↗.
+- Fixed: suggestion cards were covered by the composer gradient, and long suggestions were clamped to two lines.
+
+### 1.2.0
+
+- Send-to-corner menu item, ⭐ repo entry, first-launch greeting, “say something to start” subtitle.
+- Fixed: the full-screen watcher script was missing from the package; the collapsed badge was clipped at 150% DPI; `/pet on` could not restore her after a full close.
 
 ## Implementation
 
 - Window backend, state machine and pet-directory conventions come from [dsh-desktop-pet](https://github.com/sereinmono/dsh-desktop-pet) (MIT).
-- Added here: native-resolution animation frame streaming (no more 8×9 sprite sheet), a chat card (real DSH sessions / images / emoji / four-way layout / auto-scroll), state-machine fixes (stuck on “drawing” after a tool result, stale tasks after disconnecting), full-screen yield, persisted scale and position, a draggable collapsed badge, no tray icon, and the first-launch greeting.
+- Added here: native-resolution animation frame streaming (no more 8×9 sprite sheet), a chat card (real DSH sessions / images / emoji / four-way layout / auto-scroll), state-machine fixes (stuck on “drawing” after a tool result, stale tasks after disconnecting), full-screen yield, persisted scale and position, a draggable collapsed badge, no tray icon, AI next-step suggestions from recent chat, Markdown rendering and a resizable chat card.
 - The frontend is a single `assets/neutralino/resources/index.html`; the host is `lib/index.js`.
 
 ## Credits (important)
