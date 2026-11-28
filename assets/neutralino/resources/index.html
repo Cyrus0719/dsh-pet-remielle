@@ -751,6 +751,8 @@
     petImg.style.display = 'none'
     badge.style.display = 'block'
     const d = dpr()
+    badge.style.width = (BADGE_SIZE / d) + 'px'
+    badge.style.height = (BADGE_SIZE / d) + 'px'
     const sw = Math.round(screen.width * d), sh = Math.round(screen.height * d)
     const x = clamp(Math.round(petAnchor.x), 0, sw - BADGE_SIZE)
     const y = clamp(Math.round(petAnchor.y), 0, sh - BADGE_SIZE)
