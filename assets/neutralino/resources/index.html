@@ -180,6 +180,10 @@
     align-items: center; justify-content: center; background: rgba(26,16,22,.74); }
   #lightbox.on { display: flex; }
   #lightbox img { max-width: 92%; max-height: 92%; border-radius: 12px; box-shadow: 0 18px 48px rgba(0,0,0,.45); }
+
+#menu { max-height: calc(100vh - 12px); overflow-y: auto; }
+#menu .starlink { display:block; margin:2px 5px 5px; padding:6px 9px; border-radius:7px; font-size:11.5px; color:#c25f86; text-decoration:none; }
+#menu .starlink:hover { background:#fff3f8; }
 </style>
 </head>
 <body>
@@ -197,7 +201,7 @@
     <div class="ava"><img src="/badge.png" alt=""></div>
     <div class="who">
       <div class="nm">蕾米埃尔</div>
-      <div class="sub" id="chat-sub">正在连接 DSH…</div>
+      <div class="sub" id="chat-sub">说句话就能开始</div>
     </div>
     <div class="hbtns">
       <button class="hbtn" id="chat-reset" title="新开一个会话">⟲</button>
@@ -219,11 +223,12 @@
 <div id="menu">
   <button id="menu-chat">和她聊天</button>
   <button id="menu-session">新开一个会话</button>
-  <button id="menu-webui">在 DSH 里打开</button>
   <div class="sep"></div>
   <button id="menu-hide">收起成小圆（可拖动）</button>
-  <button id="menu-quit" class="danger">完全关闭蕾米埃尔</button>
-  <div class="tip">完全关闭后，在 DSH 会话里发 /pet on 就能叫回来。</div>
+  <button id="menu-reset">放回屏幕右下角</button>
+  <div class="sep"></div>
+  <button id="menu-quit" class="danger" title="完全关闭后，在 DSH 会话里发 /pet on 就能叫回来">完全关闭蕾米埃尔</button>
+  <a id="menu-star" class="starlink" href="#">⭐ 给蕾米埃尔一颗 Star</a>
 </div>
 <script src="neutralino.js"></script>
 <script src="pet-render.js"></script>
@@ -354,6 +359,35 @@
       try { Neutralino.events.broadcast('pet.saveScale', { scale: scale }) } catch (e) {}
     }
   }
+  function openRepo() {
+    try { Neutralino.os.open('https://github.com/Cyrus0719/dsh-pet-remielle') } catch (e) {}
+  }
+  function resetPetView() {
+    collapsed = false
+    badge.style.display = 'none'
+    canvas.style.display = 'block'
+    if (animMode) petImg.style.display = 'block'
+    if (chatOpen) { chatOpen = false; chat.style.display = 'none' }
+    anchorBefore = null
+    scale = 1
+    try { Neutralino.events.broadcast('pet.saveScale', { scale: 1 }) } catch (e) {}
+    const size = petSize()
+    const d = dpr()
+    const sw = Math.round(screen.width * d), sh = Math.round(screen.height * d)
+    petAnchor = { x: Math.max(0, sw - size.petW), y: Math.max(0, sh - size.petH) }
+    pushLayout(computeLayout(false))
+    try { Neutralino.events.broadcast('pet.drag', { x: petAnchor.x, y: petAnchor.y }) } catch (e) {}
+  }
+  function maybeShowWelcome(firstRun) {
+    if (!firstRun) return
+    try { if (localStorage.getItem('remielle.welcomed') === '1') return } catch (e) {}
+    window.setTimeout(() => {
+      if (chatOpen || collapsed) return
+      try { localStorage.setItem('remielle.welcomed', '1') } catch (e) {}
+      openChat()
+      addSys('右键菜单里有更多玩法；喜欢我的话，可以在菜单底部给我一颗 ⭐。')
+    }, 1100)
+  }
   function setAnim(name) {
     if (!animTracks) return
     const rel = animTracks[name] || animTracks.idle
@@ -452,9 +486,14 @@
   canvas.addEventListener('lostpointercapture', () => { if (dragging) endDrag(true) })
   canvas.addEventListener('contextmenu', (e) => {
     e.preventDefault()
-    menu.style.left = Math.min(e.clientX, Math.max(0, L.ww / dpr() - 180)) + 'px'
-    menu.style.top = Math.min(e.clientY, Math.max(0, L.wh / dpr() - 190)) + 'px'
     menu.style.display = 'block'
+    const rect = menu.getBoundingClientRect()
+    const vw = window.innerWidth, vh = window.innerHeight
+    const left = Math.min(e.clientX, Math.max(6, vw - rect.width - 6))
+    let top = e.clientY
+    if (top + rect.height > vh - 6) top = Math.max(6, vh - rect.height - 6)
+    menu.style.left = left + 'px'
+    menu.style.top = top + 'px'
   })
   document.addEventListener('pointerdown', (e) => { if (!menu.contains(e.target)) hideMenu() })
   function scrollLog() { chatLog.scrollTop = chatLog.scrollHeight }
@@ -665,7 +704,7 @@
   function subtitle() {
     if (sessionLabel) return '桌面助手 · ' + sessionLabel
     if (sessionId) return '桌面助手 · 已连接'
-    return '正在连接 DSH…'
+    return '说句话就能开始'
   }
   function refreshSubtitle() { chatSub.textContent = subtitle() }
   function renderHistory(payload) {
@@ -737,7 +776,8 @@
     try { Neutralino.events.broadcast('pet.newSession', {}) } catch (e) {}
     openChat()
   })
-  $('menu-webui').addEventListener('click', () => { hideMenu(); try { Neutralino.events.broadcast('pet.openWebui', {}) } catch (e) {} })
+  $('menu-reset').addEventListener('click', () => { hideMenu(); resetPetView() })
+  $('menu-star').addEventListener('click', (e) => { e.preventDefault(); hideMenu(); openRepo() })
   $('menu-hide').addEventListener('click', () => { hideMenu(); collapsePet() })
   $('menu-quit').addEventListener('click', () => { hideMenu(); quitApp() })
   $('ctl-smaller').addEventListener('click', (e) => { e.stopPropagation(); applyScale(scale - 0.25) })
@@ -909,6 +949,7 @@
     applyLayout()
     if (animMode) setAnim('idle')
     window.setTimeout(applyLayout, 150)
+    maybeShowWelcome(d.firstRun === true)
   })
   Neutralino.events.on('pet.frame', (evt) => { currentDirective = evt.detail || currentDirective; drawCurrent() })
   Neutralino.events.on('pet.anim', (evt) => { const d = evt.detail || {}; if (d.phase) setAnim(d.phase) })

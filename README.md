@@ -1,39 +1,44 @@
 # 蕾米埃尔桌宠 · dsh-pet-remielle-desktop
 
-把「小蕾米 · 全帧版」的 754 帧素材做成**常驻 Windows 桌面**的桌宠：透明置顶窗、原生分辨率动画、能在桌面上直接和 DSH 智能体对话和派活。
+[![npm](https://img.shields.io/npm/v/dsh-pet-remielle-desktop?color=f2a0c0&label=npm)](https://www.npmjs.com/package/dsh-pet-remielle-desktop)
+[![stars](https://img.shields.io/github/stars/Cyrus0719/dsh-pet-remielle?color=f2a0c0&label=stars)](https://github.com/Cyrus0719/dsh-pet-remielle/stargazers)
+[![license](https://img.shields.io/npm/l/dsh-pet-remielle-desktop?color=f2a0c0)](LICENSE)
+[![platform](https://img.shields.io/badge/platform-Windows%2010%2F11-f2a0c0)](#安装)
+[![topic](https://img.shields.io/badge/topic-dsh--plugin-f2a0c0)](https://github.com/topics/dsh-plugin)
 
-> A transparent, always-on-top desktop pet for [DeepSeek Harness](https://github.com/deepseek-ai/dsh) on Windows. 754 hand-cleaned frames, real DSH agent chat, four-way smart layout.
+[English](README.en.md) | 简体中文
 
-![桌宠](docs/pet.png)
-![聊天](docs/chat.png)
+常驻 Windows 桌面的**全帧透明桌宠**：754 帧原画动画、真正的 DSH 智能体会话、图片与 emoji、四向自适应聊天卡片。她不是网页里的贴纸，是一个能替你干活的桌面搭子。
 
-## 是什么
+![演示](docs/demo.gif)
 
-- **真桌面窗**：独立的 Neutralino 窗口（透明 / 无边框 / 置顶 / 不进任务栏），不是网页里的浮层。播放 6 个状态的原生 340×304 动画 WebP：待机、思考、工具调用、边想边写、等待、完成，全部按原始帧率 30 ms 播放，放大也不糊。
-- **能干活**：桌面上发一句话，她就真的开一个 DSH 智能体会话去干活（默认当前工作区、workspace-write 权限）。她调工具、跑命令、读文件的过程就是她自己在 DSH 里的过程；会话同时出现在 DSH Web GUI 的会话列表里，可以接着聊、接着派活。
-- **四向自适应**：宠物在屏幕右半边时聊天卡片向左展开，在左半边时向右展开；靠近屏幕顶部/底部时卡片自动下移/上抬。开合聊天时宠物本人的屏幕位置一动不动。
-- **图片与 emoji**：输入框旁的 ＋ 可以发图片（png/jpg/webp/gif/bmp，最多 4 张）给她看；她回复里的 emoji 正常彩色渲染，回复中的图片路径/URL 也会内联成缩略图，点一下看大图。
-- **全屏让位**：前台是全屏游戏或全屏视频时，自动取消置顶并隐藏，退出全屏自动回来（不会盖在游戏上）。
-- **可收起、可关闭**：宠物右上角悬浮 − / + / ×，调整大小（0.5×–2×，0.25 步进）、收起成 64×64 圆形徽章。小圆可以像宠物一样拖动、单击展开。右键菜单里「完全关闭蕾米埃尔」会结束窗口和进程；叫回来发一句 `/pet on` 就行。
-- **记得住**：对话、窗口位置、缩放都落盘；重启 DSH 之后接着上次继续。
+## 她为什么值得留在桌面上
+
+- **真桌面窗**：独立 Neutralino 窗口（透明 / 无边框 / 置顶 / 不进任务栏），6 个状态的原生 340×304 动画 WebP（待机、思考、工具调用、边想边写、等待、完成），30 ms 原始帧率，放大也不糊。
+- **能干活**：在桌面上说一句话，她就开一个真实的 DSH 智能体会话去做（当前工作区、workspace-write）。调工具、跑命令、读文件的全过程都发生在 DSH 里，会话同时出现在 Web GUI，可以接着聊、接着派活。
+- **图片与 emoji**：输入框 ＋ 发图（png/jpg/webp/gif/bmp，最多 4 张）；她的回复 emoji 彩色渲染，回复里的图片路径或 URL 自动内联成缩略图，点开看大图。
+- **四向自适应**：她在屏幕右半边，聊天卡片向左展开；在左半边，向右展开；靠近上下边缘自动收进屏幕。开合聊天时她本人一动不动。
+- **全屏让位**：前台是全屏游戏或全屏视频时自动取消置顶并隐藏，退出全屏自动回来。
+- **可拖可收可关**：右上角 − / + / × 调整大小与收起；64×64 小圆可以像宠物一样拖动，单击展开。右键菜单可「放回屏幕右下角」、给她一颗 ⭐，或者真正完全关闭（/pet on 叫回来）。
+- **记得住**：对话、位置、缩放都落盘；重启 DSH 后接着说。
+
+## 已收录
+
+| 市场 | 状态 |
+| --- | --- |
+| [dsh-plugin.org](https://dsh-plugin.org/zh/plugins/cyrus0719/dsh-pet-remielle) | ✅ 已收录 |
+| [WhaleHub](https://whalehub-dsh.vercel.app) | ✅ 已收录（fun） |
+| [DSH Market](https://github.com/2BingLing/dsh-market) | ✅ 已收录 |
+| [npm](https://www.npmjs.com/package/dsh-pet-remielle-desktop) | ✅ 已发布 |
+| dsh-plugin-hub / DSH-Store / dsh-plugin-shop / awesome-dsh-plugin / awesome-deepseek-harness / dsh-go-market | 🕓 审核中 |
+
+> 如果她让你的桌面开心了一点，点一下右上角的 ⭐ **Star**——这是对独立插件作者最直接的鼓励，也能让更多人发现蕾米埃尔。
 
 ## 安装
 
-要求：Windows 10/11、DSH 0.2.x 及以上。运行时（Neutralino）已随包内置，安装时不跑任何构建脚本，不需要 allowBuilds。
+要求：Windows 10/11、DSH 0.2.x 及以上。运行时已内置，安装时不跑构建脚本，不需要 allowBuilds。
 
-### 从 GitHub 安装
-
-```
-plugin_manager install_bundle target="github:Cyrus0719/dsh-pet-remielle"
-```
-
-命令行等价写法：
-
-```bash
-dsh plugin --profile <profile> add github:Cyrus0719/dsh-pet-remielle
-```
-
-### 从 npm 安装
+### 从 npm 安装（推荐）
 
 ```
 plugin_manager install_bundle target="npm:dsh-pet-remielle-desktop"
@@ -45,15 +50,21 @@ plugin_manager install_bundle target="npm:dsh-pet-remielle-desktop"
 dsh plugin --profile <profile> add dsh-pet-remielle-desktop
 ```
 
+### 从 GitHub 安装
+
+```
+plugin_manager install_bundle target="github:Cyrus0719/dsh-pet-remielle"
+```
+
 ### 从本地目录安装
 
 ```
 plugin_manager install_bundle target="file:C:/Users/<你>/dsh-pet-remielle"
 ```
 
-安装完成即启用（cordis.patch.yml 里插入 pet-remielle），桌面上应该出现蕾米埃尔。窗口没出现时检查插件条目是不是 active；改过插件代码后需要重载：把条目关掉再打开一次。
+装好即启用。首次启动时她会自己打开聊天卡片打个招呼；没看到窗口就确认插件条目是 active。改过插件代码后把条目关掉再打开一次即可重载。
 
-如果 runtime/neutralino-win_x64.exe 丢了（比如你只复制了部分文件），执行 node scripts/install-neutralino.mjs 重新下载。
+runtime/neutralino-win_x64.exe 丢了的话，执行 `node scripts/install-neutralino.mjs` 重新下载。
 
 ### 卸载
 
@@ -61,27 +72,28 @@ plugin_manager install_bundle target="file:C:/Users/<你>/dsh-pet-remielle"
 plugin_manager remove_bundle target="dsh-pet-remielle-desktop"
 ```
 
-再删掉 %USERPROFILE%\\.dsh\\desktop-pet（对话、位置、缩放记忆都在里面）。
+再删掉 `%USERPROFILE%\.dsh\desktop-pet`（对话、位置、缩放都在里面）。
+
 ## 用
 
 | 操作 | 结果 |
 | --- | --- |
 | 单击宠物 | 开 / 关聊天卡片 |
-| 右键宠物 | 和她聊天 / 新开一个会话 / 在 DSH 里打开这个会话 / 收起成小圆 / 完全关闭蕾米埃尔 |
-| 拖动小圆 | 换位置（记住）；单击小圆展开回宠物 |
-| 宠物右上角悬浮 − / + | 缩小 / 放大（0.5×–2×，0.25 步进，记住） |
-| 宠物右上角悬浮 × | 收起成 64×64 圆形徽章，点徽章恢复 |
+| 右键宠物 | 和她聊天 / 新开一个会话 / 收起成小圆 / 放回屏幕右下角 / 完全关闭蕾米埃尔 / ⭐ 给她一颗 Star |
 | 拖动宠物 | 换位置（记住） |
+| 宠物右上角 − / + | 缩小 / 放大（0.5×–2×，0.25 步进，记住） |
+| 宠物右上角 × | 收起成 64×64 圆形徽章 |
+| 拖动小圆 / 单击小圆 | 换位置（记住） / 展开回宠物 |
 | 聊天头部 ⟲ / ↗ / × | 新会话 / 在 DSH Web GUI 打开该会话 / 收起聊天 |
 | 输入框 ＋ | 选图片发给她（最多 4 张） |
 | Enter / Shift+Enter | 发送 / 换行 |
 
-「完全关闭蕾米埃尔」会结束窗口和它自己的进程，并且不会自己回来（插件本身仍然开着）。叫回来有两种办法：
+「完全关闭蕾米埃尔」会结束窗口和它自己的进程，插件本身仍然开着。叫回来的办法：
 
 1. 在任意 DSH 会话里发 `/pet on`（`/pet off` 等同完全关闭）；
-2. 在插件面板里把 dsh-pet-remielle-desktop 关掉再启用一次。
+2. 把插件面板里的 dsh-pet-remielle-desktop 关掉再启用一次。
 
-只想暂时收起来就点「收起成小圆」，宠物位置和对话都不会丢。
+只想暂时收起来就点「收起成小圆」，位置和对话都不会丢。
 
 ## 数据放在哪
 
@@ -89,9 +101,9 @@ plugin_manager remove_bundle target="dsh-pet-remielle-desktop"
 - `%USERPROFILE%\.dsh\desktop-pet\position.json` — 窗口坐标
 - `%USERPROFILE%\.dsh\desktop-pet\ui.json` — 缩放比例
 
-对话本体在 DSH 会话里（chat.json 只是摘录），所以在 DSH Web GUI 的会话历史里能看到同一个 session，可以继续聊。
+对话本体在 DSH 会话里（chat.json 只是摘录），所以能在 DSH Web GUI 的会话历史里找到同一个 session 继续聊。
 
-## 宠物素材与状态
+## 宠物素材与换宠物
 
 `assets/pets/remielle/pet.json`：
 
@@ -111,12 +123,20 @@ plugin_manager remove_bundle target="dsh-pet-remielle-desktop"
 }
 ```
 
-想换成别的宠物：在 `assets/pets/<id>/` 放同名结构的 `pet.json` + 透明动画 WebP，然后把 `cordis.patch.yml` 里的 `petId` 改掉；也可以放进 `%USERPROFILE%\.dsh\desktop-pet\pets\<id>\`（用户目录优先于包内）。
+换宠物：在 `assets/pets/<id>/` 放同名结构的 `pet.json` + 透明动画 WebP，把 `cordis.patch.yml` 里的 `petId` 改掉；也可以放进 `%USERPROFILE%\.dsh\desktop-pet\pets\<id>\`（用户目录优先于包内）。
+
+## 1.2.0 更新
+
+- 新增右键「放回屏幕右下角」，宠物跑到屏幕外也能一键找回。
+- 新增菜单底部 ⭐ 入口，直达 GitHub 仓库。
+- 首次安装自动打开聊天卡片并打招呼（只出现一次）。
+- 聊天头部在还没有会话时显示「说句话就能开始」。
+- 修复：全屏检测脚本之前没被打进包，导致全屏游戏时仍置顶；DPI 150% 下收起徽章被窗口裁掉；完全关闭后无法用 `/pet on` 叫回。
 
 ## 实现说明
 
 - 窗口后端、状态机、宠物目录约定来自 [dsh-desktop-pet](https://github.com/sereinmono/dsh-desktop-pet)（MIT）。
-- 本包在它基础上做的事：原生分辨率动画帧流（不再用 8×9 精灵图）、聊天卡片（真实 DSH 会话 / 图片 / emoji / 四向布局 / 自动滚到底）、状态机修复（`tool/result` 不回落导致"一直画画"、断开会话残留任务）、全屏让位、缩放与位置持久化、收起徽章、去托盘。
+- 本包在它基础上的工作：原生分辨率动画帧流（不再用 8×9 精灵图）、聊天卡片（真实 DSH 会话 / 图片 / emoji / 四向布局 / 自动滚到底）、状态机修复（`tool/result` 不回落导致「一直画画」、断开会话残留任务）、全屏让位、缩放与位置持久化、可拖动收起徽章、去托盘、首次启动引导。
 - 前端是 `assets/neutralino/resources/index.html` 一份文件；host 是 `lib/index.js`。
 
 ## 素材与署名（重要）
