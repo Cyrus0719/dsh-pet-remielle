@@ -19,8 +19,9 @@ A transparent, always-on-top desktop pet for **DeepSeek Harness** on Windows: 75
 - **Images and emoji**: attach up to four images with the ＋ button; emoji render in full color, and image paths or URLs in her replies become inline thumbnails you can click to enlarge.
 - **Four-way layout**: she sits on the right half, the card opens left; left half, it opens right; near the top or bottom, it slides back on screen. Her own position never moves when the card opens.
 - **Full-screen yield**: when a full-screen game or video is in front, she drops always-on-top and hides; she comes back when you leave full screen.
-- **Drag, collapse, close**: − / + / × on hover resize and collapse her into a draggable 64×64 badge that expands on click. The context menu can send her back to the bottom-right corner, open the GitHub repo for a ⭐, or fully close her (bring her back with /pet on).
+- **Drag, collapse, close**: − / + / × on hover resize and collapse her into a draggable 64×64 badge that expands on click. The context menu only has “Quit”; bring her back with `/pet on` in any DSH session.
 - **She remembers**: conversation, position and scale are persisted across DSH restarts.
+- **Picks up where you left off**: when the chat card opens, a model summarizes the recent turns into 1–2 concrete next steps you can send with one click; if there is nothing to continue, she stays quiet.
 
 ## Listed on
 
@@ -32,7 +33,7 @@ A transparent, always-on-top desktop pet for **DeepSeek Harness** on Windows: 75
 | [npm](https://www.npmjs.com/package/dsh-pet-remielle-desktop) | ✅ Published |
 | dsh-plugin-hub / DSH-Store / dsh-plugin-shop / awesome-dsh-plugin / awesome-deepseek-harness / dsh-go-market | 🕓 In review |
 
-> If she makes your desktop a little happier, please hit the ⭐ **Star** button at the top right. It is the most direct way to support an independent plugin author, and it helps more people find Remielle.
+> If you find her useful, please give the repo a star~
 
 ## Install
 
@@ -62,7 +63,7 @@ plugin_manager install_bundle target="github:Cyrus0719/dsh-pet-remielle"
 plugin_manager install_bundle target="file:C:/Users/<you>/dsh-pet-remielle"
 ```
 
-She is enabled right after installation and opens her chat card once to say hello on first launch. If no window appears, check that the plugin entry is active; after editing plugin code, toggle the entry off and on to reload.
+She is enabled right after installation. If no window appears, check that the plugin entry is active; after editing plugin code, toggle the entry off and on to reload.
 
 If runtime/neutralino-win_x64.exe goes missing, run `node scripts/install-neutralino.mjs` to download it again.
 
@@ -79,7 +80,7 @@ Then delete `%USERPROFILE%\.dsh\desktop-pet` (conversation, position and scale l
 | Action | Result |
 | --- | --- |
 | Click the pet | Open / close the chat card |
-| Right-click the pet | Chat / New session / Collapse to badge / Send to bottom-right / Fully close / ⭐ Star the repo |
+| Right-click the pet | “Quit” (bring her back with `/pet on`); the small line below opens the GitHub repo for a star |
 | Drag the pet | Move her (remembered) |
 | − / + on hover | Shrink / grow (0.5×–2× in 0.25 steps, remembered) |
 | × on hover | Collapse into a 64×64 badge |
@@ -88,12 +89,12 @@ Then delete `%USERPROFILE%\.dsh\desktop-pet` (conversation, position and scale l
 | ＋ in the composer | Attach images (up to 4) |
 | Enter / Shift+Enter | Send / new line |
 
-“Fully close” ends the window and its process; the plugin itself stays enabled. To bring her back:
+“Quit” ends the window and its process; the plugin itself stays enabled. To bring her back:
 
 1. Send `/pet on` in any DSH session (`/pet off` fully closes her);
 2. Toggle dsh-pet-remielle-desktop off and on in the plugin panel.
 
-Use “Collapse to badge” when you only want her out of the way — position and conversation are kept.
+Use the × on hover when you only want her out of the way — position and conversation are kept.
 
 ## Data
 

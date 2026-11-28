@@ -184,6 +184,18 @@
 #menu { max-height: calc(100vh - 12px); overflow-y: auto; }
 #menu .starlink { display:block; margin:2px 5px 5px; padding:6px 9px; border-radius:7px; font-size:11.5px; color:#c25f86; text-decoration:none; }
 #menu .starlink:hover { background:#fff3f8; }
+  /* ---- next-step suggestions ---- */
+  #suggest { display: none; margin: 0 12px 10px; position: relative; z-index: 3; }
+  #suggest.on { display: block; }
+  #suggest .shead { font-size: 10px; color: #b09aa5; letter-spacing: .2px; padding: 2px 4px 6px; }
+  #suggest .scard { width: 100%; display: flex; align-items: flex-start; gap: 8px; text-align: left; font: inherit; font-size: 11.5px; line-height: 1.55; color: #59424c; background: linear-gradient(180deg, #fffafc, #fff1f7); border: 1px solid rgba(226,140,175,.3); border-radius: 12px; padding: 8px 10px; margin-bottom: 6px; cursor: pointer; }
+  #suggest .scard:hover { border-color: rgba(226,140,175,.62); background: #fff; }
+  #suggest .stext { flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  #suggest .sgo { color: #d4779d; font-size: 12px; line-height: 1.5; }
+  #menu .starhint { display: flex; align-items: center; gap: 5px; margin: 2px 5px 4px; padding: 5px 8px 3px; font-size: 10.5px; line-height: 1.5; color: #a99aa4; cursor: pointer; }
+  #menu .starhint:hover { color: #c25f86; }
+  #menu .starhint .stxt { flex: 1; }
+  #menu .starhint .sgo { color: #d4779d; font-size: 11px; }
 </style>
 </head>
 <body>
@@ -211,6 +223,7 @@
   </div>
   <div id="chat-log"></div>
   <div id="status"><span class="spin"></span><span id="status-text"></span></div>
+  <div id="suggest"></div>
   <div id="attach-row"></div>
   <div id="composer">
     <textarea id="chat-input" rows="1" maxlength="4000" placeholder="说点什么…"></textarea>
@@ -221,14 +234,8 @@
 </div>
 <div id="lightbox"><img alt=""></div>
 <div id="menu">
-  <button id="menu-chat">和她聊天</button>
-  <button id="menu-session">新开一个会话</button>
-  <div class="sep"></div>
-  <button id="menu-hide">收起成小圆（可拖动）</button>
-  <button id="menu-reset">放回屏幕右下角</button>
-  <div class="sep"></div>
-  <button id="menu-quit" class="danger" title="完全关闭后，在 DSH 会话里发 /pet on 就能叫回来">完全关闭蕾米埃尔</button>
-  <a id="menu-star" class="starlink" href="#">⭐ 给蕾米埃尔一颗 Star</a>
+  <button id="menu-quit" class="danger" title="退出后，在 DSH 会话里发 /pet on 就能叫回来">退出</button>
+  <div id="menu-star" class="starhint" role="link" title="在浏览器打开 GitHub 仓库"><span class="sico">⭐</span><span class="stxt">如果觉得好用，请给一颗 star 吧~</span><span class="sgo">↗</span></div>
 </div>
 <script src="neutralino.js"></script>
 <script src="pet-render.js"></script>
@@ -245,6 +252,7 @@
   const chatSend = document.getElementById('chat-send')
   const chatAttach = document.getElementById('chat-attach')
   const attachRow = document.getElementById('attach-row')
+  const suggestBox = document.getElementById('suggest')
   const lightbox = document.getElementById('lightbox')
   const hit = document.getElementById('hit')
   const chatSub = document.getElementById('chat-sub')
@@ -361,32 +369,6 @@
   }
   function openRepo() {
     try { Neutralino.os.open('https://github.com/Cyrus0719/dsh-pet-remielle') } catch (e) {}
-  }
-  function resetPetView() {
-    collapsed = false
-    badge.style.display = 'none'
-    canvas.style.display = 'block'
-    if (animMode) petImg.style.display = 'block'
-    if (chatOpen) { chatOpen = false; chat.style.display = 'none' }
-    anchorBefore = null
-    scale = 1
-    try { Neutralino.events.broadcast('pet.saveScale', { scale: 1 }) } catch (e) {}
-    const size = petSize()
-    const d = dpr()
-    const sw = Math.round(screen.width * d), sh = Math.round(screen.height * d)
-    petAnchor = { x: Math.max(0, sw - size.petW), y: Math.max(0, sh - size.petH) }
-    pushLayout(computeLayout(false))
-    try { Neutralino.events.broadcast('pet.drag', { x: petAnchor.x, y: petAnchor.y }) } catch (e) {}
-  }
-  function maybeShowWelcome(firstRun) {
-    if (!firstRun) return
-    try { if (localStorage.getItem('remielle.welcomed') === '1') return } catch (e) {}
-    window.setTimeout(() => {
-      if (chatOpen || collapsed) return
-      try { localStorage.setItem('remielle.welcomed', '1') } catch (e) {}
-      openChat()
-      addSys('右键菜单里有更多玩法；喜欢我的话，可以在菜单底部给我一颗 ⭐。')
-    }, 1100)
   }
   function setAnim(name) {
     if (!animTracks) return
@@ -643,18 +625,49 @@
     const wrap = document.createElement('div')
     wrap.id = 'empty'
     wrap.innerHTML = '<div class="big"><img src="/badge.png" alt=""></div>' +
-      '<div class="t1">我在呢</div>' +
-      '<div class="t2">想聊两句，或者直接让我做点什么</div>' +
-      '<div id="chips"></div>'
+      '<div class="t1">我在呢</div>'
     chatLog.appendChild(wrap)
-    const chips = wrap.querySelector('#chips')
-    const list = ['夸夸我', '今天好累', '帮我看看桌面上的东西']
-    for (let i = 0; i < list.length; i++) {
+  }
+  let pendingSuggestions = []
+  let suggestSeq = 0
+  let suggestWanted = 0
+  function hideSuggestions() {
+    suggestWanted = 0
+    pendingSuggestions = []
+    suggestBox.classList.remove('on')
+    suggestBox.innerHTML = ''
+  }
+  function renderSuggestions(items) {
+    if (!chatOpen || busy) { pendingSuggestions = items; return }
+    suggestBox.innerHTML = ''
+    if (!items || items.length === 0) { suggestBox.classList.remove('on'); return }
+    const head = document.createElement('div')
+    head.className = 'shead'
+    head.textContent = '接着上次聊的'
+    suggestBox.appendChild(head)
+    for (let i = 0; i < items.length && i < 2; i++) {
+      const text = items[i]
       const b = document.createElement('button')
-      b.textContent = list[i]
-      b.addEventListener('click', () => { chatInput.value = list[i]; sendChat() })
-      chips.appendChild(b)
+      b.type = 'button'
+      b.className = 'scard'
+      b.title = text
+      const t = document.createElement('span')
+      t.className = 'stext'
+      t.textContent = text
+      const go = document.createElement('span')
+      go.className = 'sgo'
+      go.textContent = '↑'
+      b.appendChild(t)
+      b.appendChild(go)
+      b.addEventListener('click', () => { hideSuggestions(); chatInput.value = text; sendChat() })
+      suggestBox.appendChild(b)
     }
+    suggestBox.classList.add('on')
+  }
+  function requestSuggestions() {
+    if (!chatOpen) return
+    suggestWanted = ++suggestSeq
+    try { Neutralino.events.broadcast('pet.suggest', { id: suggestWanted }) } catch (e) {}
   }
   function clearEmpty() {
     const el = document.getElementById('empty')
@@ -690,6 +703,7 @@
     const images = attachPaths.slice(0, 4)
     const text = typed.length > 0 ? typed : (images.length > 0 ? '看看这张图' : '')
     if (!text || busy) return
+    hideSuggestions()
     hideMenu()
     clearEmpty()
     addRow('user', text, { images: images })
@@ -739,6 +753,7 @@
       try { chatInput.focus() } catch (e) {}
     }, 110)
     try { Neutralino.window.focus() } catch (e) {}
+    requestSuggestions()
   }
   function closeChat() {
     if (!chatOpen) return
@@ -770,15 +785,7 @@
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') { hideMenu(); if (chatOpen) closeChat() }
   })
-  $('menu-chat').addEventListener('click', () => { hideMenu(); openChat() })
-  $('menu-session').addEventListener('click', () => {
-    hideMenu()
-    try { Neutralino.events.broadcast('pet.newSession', {}) } catch (e) {}
-    openChat()
-  })
-  $('menu-reset').addEventListener('click', () => { hideMenu(); resetPetView() })
   $('menu-star').addEventListener('click', (e) => { e.preventDefault(); hideMenu(); openRepo() })
-  $('menu-hide').addEventListener('click', () => { hideMenu(); collapsePet() })
   $('menu-quit').addEventListener('click', () => { hideMenu(); quitApp() })
   $('ctl-smaller').addEventListener('click', (e) => { e.stopPropagation(); applyScale(scale - 0.25) })
   $('ctl-bigger').addEventListener('click', (e) => { e.stopPropagation(); applyScale(scale + 0.25) })
@@ -888,6 +895,7 @@
     if (text.length === 0 && !chatLog.querySelector('.row')) showEmpty()
     setIdleUi()
     setStatus(null)
+    if (pendingSuggestions.length > 0) { const items = pendingSuggestions; pendingSuggestions = []; renderSuggestions(items) }
     scrollLog()
   })
   Neutralino.events.on('pet.imageData', (evt) => {
@@ -908,6 +916,12 @@
     setStatus(typeof d.text === 'string' ? d.text : '')
   })
   Neutralino.events.on('pet.history', (evt) => { renderHistory(evt.detail || {}) })
+  Neutralino.events.on('pet.suggestions', (evt) => {
+    const d = evt.detail || {}
+    if (d.id !== suggestWanted) return
+    const items = Array.isArray(d.items) ? d.items.filter((item) => typeof item === 'string' && item.trim().length > 0).slice(0, 2) : []
+    renderSuggestions(items)
+  })
   Neutralino.events.on('pet.session', (evt) => {
     const d = evt.detail || {}
     if (typeof d.sessionId !== 'string' || d.sessionId.length === 0) {
@@ -949,7 +963,6 @@
     applyLayout()
     if (animMode) setAnim('idle')
     window.setTimeout(applyLayout, 150)
-    maybeShowWelcome(d.firstRun === true)
   })
   Neutralino.events.on('pet.frame', (evt) => { currentDirective = evt.detail || currentDirective; drawCurrent() })
   Neutralino.events.on('pet.anim', (evt) => { const d = evt.detail || {}; if (d.phase) setAnim(d.phase) })
